@@ -1,0 +1,1732 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Buscador Conecta</title>
+</head>
+<body>
+<style>
+  :root{
+    --bg:#F5F3EE;
+    --surface:#FFFFFF;
+    --surface-2:#ECE7DC;
+    --ink:#1C2530;
+    --muted:#6E6656;
+    --line:#DED6C3;
+    --accent:#D9581F;
+    --accent-ink:#FFFFFF;
+    --accent-soft:#F7E3D2;
+    --positive:#2F7B62;
+    --positive-soft:#DCEEE6;
+    --warn:#A63B2B;
+    --warn-soft:#F3DED9;
+    --mono-chip:#EFEADF;
+    --shadow:0 1px 2px rgba(28,37,48,.05), 0 8px 20px -12px rgba(28,37,48,.18);
+    --radius:14px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#12161B;
+      --surface:#1A2028;
+      --surface-2:#212832;
+      --ink:#ECE8DE;
+      --muted:#9C9686;
+      --line:#2C3441;
+      --accent:#FF8145;
+      --accent-ink:#1C0D03;
+      --accent-soft:#3C2515;
+      --positive:#57B79A;
+      --positive-soft:#1B3129;
+      --warn:#E2776A;
+      --warn-soft:#3A2320;
+      --mono-chip:#232A34;
+      --shadow:0 1px 2px rgba(0,0,0,.3), 0 8px 24px -12px rgba(0,0,0,.5);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#12161B;
+    --surface:#1A2028;
+    --surface-2:#212832;
+    --ink:#ECE8DE;
+    --muted:#9C9686;
+    --line:#2C3441;
+    --accent:#FF8145;
+    --accent-ink:#1C0D03;
+    --accent-soft:#3C2515;
+    --positive:#57B79A;
+    --positive-soft:#1B3129;
+    --warn:#E2776A;
+    --warn-soft:#3A2320;
+    --mono-chip:#232A34;
+    --shadow:0 1px 2px rgba(0,0,0,.3), 0 8px 24px -12px rgba(0,0,0,.5);
+  }
+
+  *{box-sizing:border-box;}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:"IBM Plex Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-size:15px;
+    line-height:1.5;
+    padding:0 18px;
+    padding-block:0 40px;
+  }
+  h1,h2,h3{
+    font-family:"Barlow Condensed", "Archivo Narrow", sans-serif;
+    text-wrap:balance;
+    margin:0;
+    letter-spacing:.2px;
+  }
+  code, .mono, .kv td, .data td, .contact-value{
+    font-family:"IBM Plex Mono", ui-monospace, SFMono-Regular, monospace;
+    font-variant-numeric:tabular-nums;
+  }
+  a{color:var(--accent);}
+  a:focus-visible, button:focus-visible, input:focus-visible, summary:focus-visible{
+    outline:2px solid var(--accent);
+    outline-offset:2px;
+  }
+  @media (prefers-reduced-motion: reduce){
+    *{animation-duration:.001ms !important; transition-duration:.001ms !important;}
+  }
+
+  /* ---------- layout shell ---------- */
+  .wrap{max-width:920px; margin:0 auto;}
+  .topbar{
+    position:sticky; top:0; z-index:20;
+    background:var(--bg);
+    padding-top:20px;
+    margin:0 -18px;
+    padding-left:18px; padding-right:18px;
+    border-bottom:1px solid var(--line);
+  }
+  .topbar-inner{max-width:920px; margin:0 auto; padding-bottom:14px;}
+
+  .brand{display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; margin-bottom:14px;}
+  .brand .glyph{
+    display:inline-flex; align-items:center; justify-content:center;
+    width:34px; height:34px; border-radius:9px;
+    background:var(--accent); color:var(--accent-ink);
+    font-family:"Barlow Condensed", sans-serif; font-weight:700; font-size:18px;
+    flex:none;
+  }
+  .brand h1{font-size:28px; font-weight:700; letter-spacing:.5px;}
+  .brand .tag{color:var(--muted); font-size:13px;}
+
+  .searchbar{
+    position:relative;
+    display:flex; align-items:center;
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:12px;
+    box-shadow:var(--shadow);
+  }
+  .searchbar svg{flex:none; margin-left:14px; color:var(--muted);}
+  #q{
+    flex:1; border:0; background:transparent; color:var(--ink);
+    font-family:inherit; font-size:16px;
+    padding:13px 10px;
+    min-width:0;
+  }
+  #q::placeholder{color:var(--muted);}
+  #clear{
+    flex:none; border:0; background:transparent; color:var(--muted);
+    cursor:pointer; padding:8px 12px; font-size:13px;
+    font-family:"IBM Plex Sans", sans-serif;
+  }
+  #clear:hover{color:var(--ink);}
+
+  .meta-row{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    margin-top:8px; color:var(--muted); font-size:12.5px;
+  }
+
+  .chips{
+    display:flex; flex-wrap:wrap; gap:6px 6px; padding:10px 2px 2px;
+  }
+  .chip{
+    flex:none;
+    border:1px solid var(--line);
+    background:var(--surface);
+    color:var(--ink);
+    padding:6px 12px;
+    border-radius:999px;
+    font-size:12.5px;
+    cursor:pointer;
+    white-space:nowrap;
+    font-family:"IBM Plex Sans", sans-serif;
+  }
+  .chip[aria-pressed="true"]{
+    background:var(--accent); border-color:var(--accent); color:var(--accent-ink); font-weight:600;
+  }
+
+  .legend{
+    display:flex; flex-wrap:wrap; gap:8px; margin-top:10px;
+  }
+  .legend-item{
+    display:flex; align-items:center; gap:6px;
+    font-size:11.5px; font-weight:600; padding:5px 10px; border-radius:8px;
+    font-family:"IBM Plex Sans",sans-serif;
+  }
+  .legend-item.accent{background:var(--accent-soft); color:var(--accent);}
+  .legend-item.positive{background:var(--positive-soft); color:var(--positive);}
+
+  main{padding-top:18px;}
+
+  /* ---------- updates ---------- */
+  .updates{
+    background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
+    margin-bottom:14px; box-shadow:var(--shadow);
+  }
+  .updates summary{
+    list-style:none; cursor:pointer; display:flex; align-items:center; gap:10px;
+    padding:13px 16px; font-weight:600; font-size:14px;
+  }
+  .updates summary::-webkit-details-marker{display:none;}
+  .updates summary .arrow{margin-left:auto; color:var(--muted); font-size:12px; transition:transform .15s;}
+  .updates[open] summary .arrow{transform:rotate(90deg);}
+  .dot{
+    background:var(--accent); color:var(--accent-ink); border-radius:999px;
+    font-size:11px; font-weight:700; padding:1px 7px;
+  }
+  .updates ul{margin:0; padding:0 16px 14px 16px; list-style:none;}
+  .updates li{
+    display:flex; gap:10px; padding:6px 0; border-top:1px solid var(--line); font-size:13.5px;
+  }
+  .updates li:first-child{border-top:none;}
+  .updates .u-date{flex:none; width:88px; color:var(--muted);}
+
+  /* ---------- contacts ---------- */
+  .contacts{
+    background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
+    padding:16px; margin-bottom:22px; box-shadow:var(--shadow);
+  }
+  .contacts h2{font-size:19px; margin-bottom:2px;}
+  .contacts .sub{color:var(--muted); font-size:12.5px; margin-bottom:12px;}
+  .contact-grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(240px,1fr)); gap:10px;}
+  .contact-item{
+    background:var(--surface-2); border-radius:10px; padding:10px 12px;
+  }
+  .contact-item .c-label{font-size:12px; color:var(--muted); margin-bottom:3px;}
+  .contact-value{font-size:14.5px; font-weight:600; color:var(--ink); text-decoration:none; word-break:break-word;}
+  .contact-value:hover{color:var(--accent);}
+  .contact-item .c-note{font-size:11.5px; color:var(--muted); margin-top:3px;}
+  .contact-item.featured{background:var(--accent-soft); border:1px solid var(--accent);}
+  .contact-item.featured .c-label{color:var(--accent); font-weight:700;}
+
+  .cred-box{background:var(--surface-2); border:1px solid var(--line); border-radius:10px; padding:10px 12px; margin-top:10px;}
+  .cred-box .c-label{margin-bottom:4px;}
+  .cred-box .c-note{margin-bottom:8px;}
+  .cred-row{display:flex; align-items:center; justify-content:space-between; gap:8px; padding:6px 0; flex-wrap:wrap;}
+  .cred-row + .cred-row{border-top:1px solid var(--line);}
+  .cred-label{font-size:11px; font-weight:700; letter-spacing:.4px; text-transform:uppercase; color:var(--muted); min-width:78px;}
+  .cred-value-wrap{display:flex; align-items:center; gap:6px; flex:1; justify-content:flex-end; flex-wrap:wrap; min-width:0;}
+  .cred-value{font-family:"IBM Plex Mono",monospace; font-size:13px; color:var(--ink); word-break:break-all;}
+  .cred-value.cred-secret{color:var(--accent);}
+  .cred-icon-btn{
+    border:1px solid var(--line); background:var(--surface); color:var(--muted);
+    width:26px; height:26px; border-radius:7px; cursor:pointer; display:inline-flex;
+    align-items:center; justify-content:center; font-size:13px; flex:none;
+  }
+  .cred-icon-btn:hover{color:var(--accent); border-color:var(--accent);}
+  .cred-toggle-btn{
+    border:1px solid var(--line); background:var(--surface); color:var(--muted);
+    font-size:11px; font-weight:600; padding:4px 8px; border-radius:7px; cursor:pointer; white-space:nowrap; flex:none;
+  }
+  .cred-toggle-btn:hover{color:var(--accent); border-color:var(--accent);}
+  .cred-open-btn{
+    display:inline-flex; align-items:center; gap:4px; margin-top:10px;
+    border:1px solid var(--accent); background:var(--accent-soft); color:var(--accent);
+    font-size:12px; font-weight:700; padding:6px 12px; border-radius:8px; text-decoration:none;
+  }
+  .cred-open-btn:hover{background:var(--accent); color:var(--accent-ink);}
+  .contacts .schedule-title{
+    font-size:13px; font-weight:700; margin:20px 0 2px; display:flex; align-items:center; gap:8px;
+  }
+  .contacts .schedule-updated{font-size:11px; color:var(--muted); font-weight:400;}
+  .schedule-warning{
+    font-size:12px; color:var(--warn); background:var(--warn-soft);
+    border-radius:8px; padding:8px 12px; margin-top:8px;
+  }
+
+  /* ---------- results ---------- */
+  .section-heading{
+    font-size:15px; font-family:"IBM Plex Sans", sans-serif; font-weight:700;
+    text-transform:uppercase; letter-spacing:.6px; color:var(--muted);
+    margin:26px 0 10px; padding-bottom:6px; border-bottom:1px solid var(--line);
+  }
+  .section-heading .n{color:var(--accent); font-family:"IBM Plex Mono", monospace;}
+
+  .card{
+    background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
+    padding:16px 18px; margin-bottom:12px; box-shadow:var(--shadow);
+  }
+  .card h3{font-size:20px; font-weight:600; margin-bottom:8px;}
+  .card-actions{margin-bottom:12px;}
+  .copy-btn{
+    display:inline-flex; align-items:center; gap:6px;
+    border:1px solid var(--line); background:var(--surface-2); color:var(--ink);
+    font-family:"IBM Plex Sans",sans-serif; font-weight:600; font-size:12px;
+    padding:6px 12px; border-radius:8px; cursor:pointer;
+  }
+  .copy-btn:hover{background:var(--accent-soft); border-color:var(--accent); color:var(--accent);}
+  .copy-btn.copied{background:var(--positive-soft); border-color:var(--positive); color:var(--positive);}
+  .copy-btn.small{padding:4px 9px; font-size:11px; white-space:nowrap;}
+  .fleet-block{background:var(--surface-2); border:1px solid var(--line); border-radius:10px; padding:10px 12px; margin-bottom:10px;}
+  .fleet-head{display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:6px; flex-wrap:wrap;}
+  .fleet-head strong{font-family:"Barlow Condensed",sans-serif; font-size:17px; font-weight:700; letter-spacing:.2px;}
+  .fleet-block .reqs{font-size:13.5px;}
+  .fleet-block .reqs li{margin-bottom:4px;}
+  .fleet-sub{font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.4px; color:var(--muted); margin:10px 0 4px;}
+
+  .back-to-ref{
+    display:inline-flex; align-items:center; gap:6px;
+    border:1px dashed var(--line); background:var(--surface); color:var(--muted);
+    font-family:"IBM Plex Sans",sans-serif; font-weight:600; font-size:12.5px;
+    padding:8px 14px; border-radius:10px; cursor:pointer; margin-bottom:14px;
+  }
+  .back-to-ref:hover{background:var(--accent-soft); border-color:var(--accent); color:var(--accent);}
+  .badges{display:flex; flex-wrap:wrap; gap:6px; margin-bottom:10px;}
+  .badge{
+    font-size:11px; font-weight:600; padding:3px 9px; border-radius:999px;
+    background:var(--surface-2); color:var(--muted); font-family:"IBM Plex Sans",sans-serif;
+  }
+  .badge.accent{background:var(--accent-soft); color:var(--accent);}
+  .badge.warn{background:var(--warn-soft); color:var(--warn);}
+  .badge.positive{background:var(--positive-soft); color:var(--positive);}
+
+  .card p{margin:0 0 10px;}
+  .card > *:last-child{margin-bottom:0;}
+
+  .kv{width:100%; border-collapse:collapse; margin-bottom:10px;}
+  .kv th{
+    text-align:left; vertical-align:top; color:var(--muted); font-weight:600;
+    font-family:"IBM Plex Sans",sans-serif; font-size:12.5px;
+    padding:7px 12px 7px 0; width:150px; white-space:nowrap;
+  }
+  .kv td{font-family:"IBM Plex Sans",sans-serif; font-size:14px; padding:7px 0; border-top:1px solid var(--line);}
+  .kv tr:first-child td, .kv tr:first-child th{border-top:none;}
+
+  .reqs{margin:0; padding-left:18px;}
+  .reqs li{margin-bottom:2px;}
+
+  ul.notes{margin:0 0 10px; padding-left:18px; color:var(--muted); font-size:13.5px;}
+  ul.notes li{margin-bottom:4px;}
+
+  ol.steps{margin:0 0 12px; padding-left:0; counter-reset:step; list-style:none;}
+  ol.steps li{
+    position:relative; padding:6px 0 6px 34px; font-size:14px;
+    border-top:1px solid var(--line);
+  }
+  ol.steps li:first-child{border-top:none;}
+  ol.steps li::before{
+    counter-increment:step; content:counter(step);
+    position:absolute; left:0; top:6px;
+    width:22px; height:22px; border-radius:6px;
+    background:var(--accent-soft); color:var(--accent);
+    font-family:"IBM Plex Mono",monospace; font-size:12px; font-weight:600;
+    display:flex; align-items:center; justify-content:center;
+  }
+
+  .table-wrap{overflow-x:auto; margin-bottom:10px; border:1px solid var(--line); border-radius:10px;}
+  table.data{width:100%; border-collapse:collapse; min-width:420px;}
+  table.data.wide{min-width:640px;}
+  table.data th{
+    text-align:left; background:var(--surface-2); color:var(--muted);
+    font-family:"IBM Plex Sans",sans-serif; font-weight:600; font-size:12px;
+    padding:8px 10px; white-space:nowrap;
+  }
+  table.data td{
+    padding:8px 10px; font-size:13.5px; border-top:1px solid var(--line); vertical-align:top;
+  }
+  table.data tr:hover td{background:var(--surface-2);}
+
+  .pwg-wrap{overflow-x:auto; margin-bottom:10px;}
+  .pwg-grid{display:flex; flex-direction:column; gap:10px; min-width:520px; padding:2px;}
+  .pwg-row{display:grid; grid-template-columns:150px repeat(3, 1fr); gap:8px; align-items:stretch;}
+  .pwg-name{display:flex; flex-direction:column; justify-content:center;}
+  .pwg-name strong{
+    font-family:"Barlow Condensed",sans-serif; font-size:15px; font-weight:700;
+    letter-spacing:.2px; text-transform:uppercase; color:var(--ink);
+  }
+  .pwg-name span{color:var(--muted); font-size:11.5px; margin-top:2px;}
+  .pwg-cell{
+    border-radius:10px; padding:10px 8px; text-align:center;
+    font-family:"IBM Plex Sans",sans-serif; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; gap:2px; min-height:52px;
+  }
+  .pwg-cell .pwg-week{font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:.4px; opacity:.75;}
+  .pwg-cell .pwg-label{font-size:13px; font-weight:700;}
+  .pwg-cell.pwg-work{background:var(--positive-soft); color:var(--positive);}
+  .pwg-cell.pwg-paid{background:var(--accent); color:var(--accent-ink);}
+  .pwg-cell.pwg-empty{background:var(--surface-2); color:var(--muted); opacity:.65;}
+  .pwg-foot{color:var(--muted); font-size:12px; margin:-2px 0 10px;}
+
+  .subhead{font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:var(--muted); margin:14px 0 6px;}
+  .subhead:first-child{margin-top:0;}
+
+  mark{background:var(--accent-soft); color:var(--ink); border-radius:3px; padding:0 2px;}
+
+  #empty{display:none; text-align:center; padding:50px 20px; color:var(--muted);}
+  #empty h3{color:var(--ink); font-size:22px; margin-bottom:6px;}
+  #empty .try{margin-top:14px; font-size:13px;}
+  #empty .try button{
+    border:1px solid var(--line); background:var(--surface); color:var(--ink);
+    padding:5px 11px; border-radius:999px; font-size:12.5px; margin:3px; cursor:pointer;
+  }
+
+  footer{
+    max-width:920px; margin:34px auto 0; padding-top:16px; border-top:1px solid var(--line);
+    color:var(--muted); font-size:12px; display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap;
+  }
+
+  @media (max-width:560px){
+    .brand h1{font-size:24px;}
+    .kv th{width:120px;}
+    .card{padding:14px;}
+  }
+</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+
+<div class="wrap">
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <span class="glyph">C</span>
+        <h1>Buscador Conecta</h1>
+        <span class="tag">Directo · Guía rápida para atención al conductor</span>
+      </div>
+      <div class="searchbar">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input id="q" type="search" autocomplete="off" spellcheck="false"
+               placeholder="Buscar: cambio de cuenta, suspensión, graticash, adelanto especial…" aria-label="Buscar en la guía">
+        <button id="clear" type="button" hidden>Limpiar</button>
+      </div>
+      <div class="meta-row">
+        <span id="count" aria-live="polite">—</span>
+        <span>Julio 2026 · última actualización 27/09/2026</span>
+      </div>
+      <div class="legend">
+        <span class="legend-item accent">🎫 Requiere ticket — el conductor recibe la respuesta por Cereza</span>
+        <span class="legend-item positive">🚫 No se ticketea — infórmale tú, por WhatsApp o llamada</span>
+      </div>
+      <div class="chips" id="chips" role="tablist" aria-label="Filtrar por sección"></div>
+    </div>
+  </header>
+
+  <main>
+    <details class="updates" id="updates">
+      <summary>Actualizaciones recientes <span class="dot">8</span><span class="arrow">▸</span></summary>
+      <ul>
+        <li><span class="u-date mono">27/09/2026</span><span>Cada solicitud indica si requiere ticket o no, y se enlaza la herramienta "Retenciones por Móvil" para resolver reclamos de SUNAT al toque.</span></li>
+        <li><span class="u-date mono">27/09/2026</span><span>Cupones: el tope pasa de 1 a 6 cupones por semana.</span></li>
+        <li><span class="u-date mono">16/09/2026</span><span>Se agregan los Horarios de Atención y Responsables (Miraflores y Aeropuerto).</span></li>
+        <li><span class="u-date mono">24/08/2026</span><span>Precisiones en "Cambio de cuenta de pago".</span></li>
+        <li><span class="u-date mono">20/08/2026</span><span>Se añade detalle de semanas de cobro del servicio contable.</span></li>
+        <li><span class="u-date mono">19/08/2026</span><span>Se añade información de plazos para cambios y adelantos.</span></li>
+        <li><span class="u-date mono">10/08/2026</span><span>Cambio en comisión de servicios aerolíneas subvencionados para conductores con membresía urbana.</span></li>
+        <li><span class="u-date mono">03/08/2026</span><span>Cambio de comisión para flota urbana y plazas en servicios origen aeropuerto.</span></li>
+      </ul>
+    </details>
+
+    <section class="contacts" id="contactos">
+      <h2>Contactos y accesos rápidos</h2>
+      <div class="sub">Lo que más se usa a media llamada — antes de ticketear, revisa aquí.</div>
+      <div class="contact-grid">
+        <div class="contact-item featured">
+          <div class="c-label">📊 Retenciones SUNAT — BI y correo</div>
+          <div class="c-note">Se visualizan en el BI · Reporte de Liquidación: ingresa al link y busca el N.° de móvil en la Hoja 3.</div>
+          <a class="contact-value" href="https://app.powerbi.com/view?r=eyJrIjoiNjRjNDRmYTMtMTU5ZC00YjljLWE1M2EtNDczNzIxMDg2MjZmIiwidCI6IjhjYTdlNGRkLTNhMjEtNGViMC1iNWM3LTlhMDgzNTE2N2Q4MyJ9" target="_blank" rel="noopener">Abrir Reporte de Liquidación (BI)</a>
+
+          <div class="cred-box">
+            <div class="c-label">Correo de Retenciones SUNAT</div>
+            <div class="c-note">Buzón genérico donde llega toda la información de retenciones de SUNAT. Revísalo si necesitas más detalle.</div>
+            <div class="cred-row">
+              <span class="cred-label">Usuario</span>
+              <span class="cred-value-wrap">
+                <span class="cred-value" data-cred-text="retencionsunat@directoapp.pe">retencionsunat@directoapp.pe</span>
+                <button type="button" class="cred-icon-btn" data-copy-cred title="Copiar usuario" aria-label="Copiar usuario">⧉</button>
+              </span>
+            </div>
+            <div class="cred-row">
+              <span class="cred-label">Contraseña</span>
+              <span class="cred-value-wrap">
+                <span class="cred-value cred-secret" data-cred-text="D1r3ct#04ppre" data-masked="true">••••••••••••</span>
+                <button type="button" class="cred-toggle-btn" data-toggle-cred>Mostrar</button>
+                <button type="button" class="cred-icon-btn" data-copy-cred title="Copiar contraseña" aria-label="Copiar contraseña">⧉</button>
+              </span>
+            </div>
+            <a class="cred-open-btn" href="https://webmail.directoapp.pe/" target="_blank" rel="noopener">Abrir correo ↗</a>
+          </div>
+        </div>
+        <div class="contact-item">
+          <div class="c-label">Soporte Routing (códigos de pareo)</div>
+          <a class="contact-value" href="tel:+51956352681">956 352 681</a>
+          <div class="c-note">Lun a sáb, 9:00am–5:00pm. Domingos y feriados no atienden.</div>
+        </div>
+        <div class="contact-item">
+          <div class="c-label">Escalamiento de pareo — Alonso Arias</div>
+          <a class="contact-value" href="tel:+51968647502">968 647 502</a>
+          <div class="c-note">Solo si Soporte Routing no responde en 4 horas dentro del horario.</div>
+        </div>
+        <div class="contact-item">
+          <div class="c-label">Afiliaciones Directo (reconexión)</div>
+          <a class="contact-value" href="tel:+51923129603">923 129 603</a>
+          <div class="c-note">No se crea ticket: coordinar con Ricardo Tapia (titular) o Mirlandy Gamez.</div>
+        </div>
+        <div class="contact-item">
+          <div class="c-label">Inspección de vehículo — Miraflores</div>
+          <a class="contact-value" href="tel:+51924027030">Jhon Diaz · 924 027 030</a>
+          <div class="c-note">Cambio de vehículo: solo martes y jueves, 9:00am–4:00pm (credenciales).</div>
+        </div>
+        <div class="contact-item">
+          <div class="c-label">Inspección — Aeropuerto</div>
+          <div class="contact-value">Jigsaw Ramos · 902 015 419</div>
+          <div class="c-note">Horario rotativo, coordinar cita previa.</div>
+        </div>
+        <div class="contact-item">
+          <div class="c-label">Estado de adelanto especial</div>
+          <a class="contact-value" href="https://directoprestamo.joseph7104.workers.dev/" target="_blank" rel="noopener">directoprestamo.joseph7104.workers.dev</a>
+          <div class="c-note">Usuario / clave: <code>supply</code>. No compartir este link con conductores.</div>
+        </div>
+        <div class="contact-item">
+          <div class="c-label">Detalle de liquidación y PEX</div>
+          <a class="contact-value" href="https://directo-central.github.io/lectura_liquidacion/" target="_blank" rel="noopener">directo-central.github.io/lectura_liquidacion</a>
+          <div class="c-note">Se carga la liquidación (Excel) del conductor.</div>
+        </div>
+      </div>
+
+      <div class="schedule-title">Horarios de atención y responsables <span class="schedule-updated">· vigente para orientar al conductor y evitar derivaciones fuera de horario — última actualización 16/09/2026</span></div>
+      <div class="table-wrap">
+        <table class="data wide">
+          <thead><tr><th>Servicio</th><th>Ubicación</th><th>Días</th><th>Horario</th><th>Responsable(s)</th><th>Notas / contacto</th><th>Copiar</th></tr></thead>
+          <tbody id="scheduleBody"></tbody>
+        </table>
+      </div>
+      <div class="schedule-warning">⚠ En el aeropuerto no se realizan reactivaciones ni reconexiones — esas se gestionan solo en la oficina de Miraflores.</div>
+    </section>
+
+    <button type="button" id="backToRef" class="back-to-ref" hidden>📇 Ver contactos y horarios de atención</button>
+
+    <div id="results"></div>
+
+    <div id="empty">
+      <h3>Sin resultados</h3>
+      <p>No encontramos fichas para esa búsqueda.</p>
+      <div class="try">
+        Prueba con:
+        <button type="button" data-try="suspensión">suspensión</button>
+        <button type="button" data-try="graticash">graticash</button>
+        <button type="button" data-try="cuenta de pago">cuenta de pago</button>
+        <button type="button" data-try="servicio contable">servicio contable</button>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <span>Basado en "Guía Rápida · Conecta Conductor" (v6, Directo — Julio 2026) y en los horarios/responsables vigentes al 16/09/2026.</span>
+    <span>Ante dudas no cubiertas aquí, consulta con el equipo de coordinación de Conecta.</span>
+  </footer>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  // ---------- content helpers ----------
+  function kv(rows){
+    return '<table class="kv"><tbody>' + rows.map(function(r){
+      return '<tr><th>'+r[0]+'</th><td>'+r[1]+'</td></tr>';
+    }).join('') + '</tbody></table>';
+  }
+  function reqs(items){
+    if(!items || !items.length) return '—';
+    return '<ul class="reqs">' + items.map(function(i){return '<li>'+i+'</li>';}).join('') + '</ul>';
+  }
+  function notes(items){
+    if(!items || !items.length) return '';
+    return '<ul class="notes">' + items.map(function(i){return '<li>'+i+'</li>';}).join('') + '</ul>';
+  }
+  function steps(items){
+    return '<ol class="steps">' + items.map(function(i){return '<li>'+i+'</li>';}).join('') + '</ol>';
+  }
+  function dataTable(headers, rows, wide){
+    return '<div class="table-wrap"><table class="data'+(wide?' wide':'')+'"><thead><tr>' +
+      headers.map(function(h){return '<th>'+h+'</th>';}).join('') +
+      '</tr></thead><tbody>' +
+      rows.map(function(r){return '<tr>'+r.map(function(c){return '<td>'+c+'</td>';}).join('')+'</tr>';}).join('') +
+      '</tbody></table></div>';
+  }
+  function sub(text){ return '<div class="subhead">'+text+'</div>'; }
+  function payWeekGrid(items, footnote){
+    var rows = items.map(function(it){
+      var cells = it.cells.map(function(c){
+        return '<div class="pwg-cell pwg-'+c.type+'"><span class="pwg-week">Semana '+c.week+'</span>' +
+          (c.label ? '<span class="pwg-label">'+c.label+'</span>' : '') + '</div>';
+      }).join('');
+      return '<div class="pwg-row"><div class="pwg-name"><strong>'+it.name+'</strong>' +
+        (it.sub ? '<span>'+it.sub+'</span>' : '') + '</div>' + cells + '</div>';
+    }).join('');
+    return '<div class="pwg-wrap"><div class="pwg-grid">' + rows + '</div></div>' +
+      (footnote ? '<div class="pwg-foot">'+footnote+'</div>' : '');
+  }
+  function credBox(o){
+    var rows = o.rows.map(function(r){
+      var isSecret = !!r.secret;
+      var masked = isSecret ? "•".repeat(Math.max(8, r.value.length)) : r.value;
+      return '<div class="cred-row">' +
+        '<span class="cred-label">' + r.label + '</span>' +
+        '<span class="cred-value-wrap">' +
+          '<span class="cred-value' + (isSecret ? ' cred-secret' : '') + '" data-cred-text="' + r.value + '" data-masked="' + (isSecret ? 'true' : 'false') + '">' + masked + '</span>' +
+          (isSecret ? '<button type="button" class="cred-toggle-btn" data-toggle-cred>Mostrar</button>' : '') +
+          '<button type="button" class="cred-icon-btn" data-copy-cred title="Copiar ' + r.label.toLowerCase() + '" aria-label="Copiar ' + r.label.toLowerCase() + '">⧉</button>' +
+        '</span>' +
+      '</div>';
+    }).join('');
+    return '<div class="cred-box">' +
+      '<div class="c-label">' + o.label + '</div>' +
+      (o.note ? '<div class="c-note">' + o.note + '</div>' : '') +
+      rows +
+      (o.openHref ? '<a class="cred-open-btn" href="' + o.openHref + '" target="_blank" rel="noopener">' + (o.openText || 'Abrir') + ' ↗</a>' : '') +
+    '</div>';
+  }
+  // Información por flota (ayuda informativa para el conductor que evalúa cambiar de flota).
+  // Cada flota se muestra con su propio botón "Copiar". Fuente: láminas de Pago por flota y Sección 9.
+  var FLEETS = [
+    {key:"aeropuerto", name:"Flota Aeropuerto", blocks:[
+      {head:"", items:[
+        "Esquema de Pago Express (cobra el miércoles): trabaja la semana 1 y cobra el miércoles de la semana 2.",
+        "Factura hasta el miércoles 9:00am.",
+        "Ingresa eligiendo modalidad Diurna o Nocturna (la modalidad Regular es solo para conductores antiguos)."
+      ]},
+      {head:"Membresía semanal", items:[
+        "Diurna y Nocturna: S/315 (Lite) - S/290 (Comfort & XL) - S/285 (Comfort XL).",
+        "Regular: S/265 (Lite) - S/240 (Comfort & XL) - S/235 (Comfort XL).",
+        "Vehículo VAN: S/240 semanal, con 22% de comisión en todos los servicios."
+      ]},
+      {head:"Comisión", items:[
+        "Servicios con origen Aeropuerto, Aerolíneas y Destino Aeropuerto: 27.9% (Regular: todo el día. Diurna: 6am–9pm. Nocturna: 4pm–8am. Fuera de esos horarios: 35%).",
+        "Servicios Urbano: 17.9% en servicios con tarifa mayor a S/30, y 0% de comisión en servicios con tarifa de S/30 o menos.",
+        "Servicios Plazas: 25%."
+      ]}
+    ]},
+    {key:"urbana", name:"Flota Urbana", blocks:[
+      {head:"", items:[
+        "Esquema de Pago Express (cobra el miércoles): trabaja la semana 1 y cobra el miércoles de la semana 2.",
+        "Factura hasta el miércoles 9:00am.",
+        "Ingresa por defecto como Urbano Partner con 29% de comisión."
+      ]},
+      {head:"Membresía Urbana (Previa evaluación)", items:[
+        "Costo: S/280 semanales (cupos limitados).",
+        "Sin comisión en servicios Urbanos y Destino de 4am a 10am y de 4pm a 11pm.",
+        "Fuera de ese horario: 27.9% en servicios con tarifa mayor a S/30, y 0% de comisión en servicios con tarifa de S/30 o menos.",
+        "Sábados, domingos y feriados: 10% de comisión."
+      ]},
+      {head:"Comisión", items:[
+        "Servicios con origen Aeropuerto: 40% con Membresía Urbana & Urbano Regular; 43% Urbano Partner.",
+        "Servicios con origen Plazas: 25%."
+      ]}
+    ]},
+    {key:"aerolineas", name:"Flota Aerolíneas (LATAM · SKY · JetSmart)", blocks:[
+      {head:"", items:[
+        "Esquema de Pago Diferido (cobra el martes): lo que trabaja en la semana 1 lo cobra el martes de la semana 3; lo que trabaja en la semana 2 lo cobra el martes de la semana 4, y así sucesivamente.",
+        "Nuevos ingresos: durante sus primeras 3 semanas cobran como Express (lo que trabajan en una semana lo cobran el miércoles de la semana siguiente); después pasan a Diferido.",
+        "Factura del martes hasta el martes siguiente a las 7:59am, sin prórroga.",
+        "Por defecto ingresa a LATAM; el cambio a SKY o JetSmart lo evalúan los jefes de operación."
+      ]},
+      {head:"Comisión", items:[
+        "Servicios de Aerolíneas, Urbanos, Destino y Origen Plazas: 25%.",
+        "Servicios con origen Aeropuerto: 43.5% (igual en las tres subflotas)."
+      ]},
+      {head:"Adelanto de pago", items:[
+        "Puede solicitar el adelanto semanal (cobrar antes) con una comisión de 2.5%."
+      ]}
+    ]},
+    {key:"plazas", name:"Flota Plazas (Jockey Plaza · Mall Bellavista)", blocks:[
+      {head:"", items:[
+        "Esquema de Pago Plazas (cobra el viernes): trabaja la semana 1 y cobra el viernes de la semana 2, entre las 5pm y 7pm.",
+        "La liquidación sube entre martes y jueves; factura hasta el viernes a las 8:00am.",
+        "Al cambiarse, siempre valida con Mirella Hurtado supervisor de Plazas."
+      ]},
+      {head:"Membresía semanal", items:[
+        "Jockey Plaza: S/240.",
+        "Mall Bellavista: S/180."
+      ]},
+      {head:"Comisión (igual en ambas)", items:[
+        "Servicio con origen Aeropuerto: 25% en horario de alta demanda (lunes y miércoles 9am–12pm, y todos los días 4pm–12am); 33% fuera del rango horario.",
+        "Servicio Destino Aeropuerto: 25%.",
+        "Servicios Aerolíneas y Urbanos: 0% hasta cubrir el monto de la membresía (máx. S/240 en Jockey o S/180 en Bellavista); luego 15%."
+      ]}
+    ]}
+  ];
+  function escHtml(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+  function fleetCopyCard(f){
+    var lines = ["*" + f.name + ":*"];
+    f.blocks.forEach(function(b){
+      if(b.head) lines.push("*" + b.head + "*");
+      b.items.forEach(function(i){ lines.push("* " + i); });
+    });
+    return {rawText: lines.join("\n")};
+  }
+  function fleetBlocks(){
+    return FLEETS.map(function(f){
+      var body = f.blocks.map(function(b){
+        return (b.head ? '<div class="fleet-sub">' + escHtml(b.head) + '</div>' : '') +
+          '<ul class="reqs">' + b.items.map(function(i){ return '<li>' + escHtml(i) + '</li>'; }).join('') + '</ul>';
+      }).join('');
+      return '<div class="fleet-block">' +
+        '<div class="fleet-head"><strong>' + escHtml(f.name) + '</strong>' +
+        '<button type="button" class="copy-btn small" data-copy-fleet="' + f.key + '">📋 Copiar</button></div>' +
+        body +
+      '</div>';
+    }).join('');
+  }
+  function solicitud(o){
+    var html = kv([
+      ['Plazo de registro', o.plazo],
+      ['Rige desde', o.rige],
+      ['Requisitos', reqs(o.requisitos)]
+    ]);
+    if(o.notas) html += notes(o.notas);
+    return html;
+  }
+
+  // ---------- sections ----------
+  var SECTIONS = [
+    {id:1,  name:"Cambio de vehículo e inspección"},
+    {id:2,  name:"Solicitudes y gestiones"},
+    {id:3,  name:"Dudas frecuentes"},
+    {id:4,  name:"Adelantos y fondo personal"},
+    {id:5,  name:"Pago por flota y facturación"},
+    {id:6,  name:"Servicio contable"},
+    {id:7,  name:"Conceptos de la liquidación"},
+    {id:8,  name:"Suspensiones y reactivación"},
+    {id:9,  name:"Cambio de flota: reglas e info por flota"},
+    {id:10, name:"Permisos especiales (exoneración)"},
+    {id:11, name:"Códigos de pareo"},
+    {id:12, name:"Programa de referidos y GratiCash"},
+    {id:13, name:"Cronograma de servicio contable"}
+  ];
+
+  // ---------- cards ----------
+  var CARDS = [];
+
+  // Section 1
+  CARDS.push({
+    section:1, tags:"cambio de vehiculo inspeccion miraflores john jhon diaz credenciales accesos estacionamiento",
+    title:"Cambio de vehículo — proceso de inspección",
+    badges:[{t:"Presencial",c:""},{t:"🚫 No se ticketea",c:"positive"},{t:"Rige: día siguiente",c:"accent"}],
+    msg:"Para cambiar de vehículo se requiere una inspección presencial en la oficina de Miraflores, solo los días martes y jueves, de 9:00am a 4:00pm (con Jhon Diaz, 924 027 030). Una vez que el vehículo pasa la inspección y queda conforme, el cambio procede al día siguiente.",
+    body:
+      '<p>Requiere <strong>inspección presencial</strong>, siempre en Miraflores, con el inspector <strong>Jhon Diaz</strong>.</p>' +
+      steps([
+        "El conductor solicita el cambio de vehículo.",
+        "Inspección presencial en Miraflores (martes y jueves, 9:00am–4:00pm).",
+        "Jhon Diaz revisa el vehículo y da conformidad.",
+        "El cambio procede al día siguiente."
+      ]) +
+      notes([
+        "Es hasta las 4:00pm porque el equipo de Accesos debe imprimir las nuevas credenciales para entregárselas al conductor.",
+        "Se pide martes/jueves para que el conductor reciba las credenciales actualizadas y circule con la información correcta.",
+        "El horario general de inspección es hasta las 5:30pm (solo inspección, no cambio de vehículo).",
+        "Puede usar el estacionamiento de la oficina indicando que viene a inspección de Directo.",
+        "Contacto directo: Jhon Diaz, 924 027 030."
+      ])
+  });
+
+  // Section 2 — Solicitudes
+  CARDS.push({section:2, tags:"cambio de flota esquema comisiones express diferido whatsapp",
+    title:"Cambio de flota",
+    badges:[{t:"🎫 Requiere ticket",c:"accent"}],
+    msg:"Puede solicitarlo desde el lunes hasta el viernes a las 23:59, y el cambio rige desde el lunes siguiente. Le informamos el esquema de comisiones y pagos (Express o Diferido) de la flota de su interés.",
+    paySchemeTable:{headers:["Esquema","Cuándo cobra","Flotas"], rows:[
+      ["Express","Miércoles de la semana siguiente a la trabajada","Aeropuerto y Urbana"],
+      ["Diferido","Martes, dos semanas después de la trabajada","Aerolíneas"],
+      ["Plazas","Viernes de la semana siguiente a la trabajada","Jockey y Mall Bellavista"]
+    ]},
+    body: solicitud({
+      plazo:"Ticket desde el lunes hasta máximo el viernes 23:59.",
+      rige:"Lunes.",
+      requisitos:[
+        "Informar el esquema de comisiones y pagos (Express/Diferido) de la flota de interés: usar el botón Copiar de cada flota (abajo).",
+        "Es ayuda informativa: si el conductor está de acuerdo, recién se gestiona el cambio de flota.",
+        "Solamente mostrar las condiciones vigentes (reglas por flota en la Sección 9)."
+      ],
+      notas:["Los grupos de WhatsApp se actualizan los sábados (Supply).","Los accesos de aeropuerto se habilitan desde el martes por la tarde."]
+    }) +
+    sub("Información por flota — copiar solo la flota de interés") +
+    fleetBlocks() +
+    sub("Esquema de pagos") +
+    payWeekGrid([
+      {name:"Pago Express", sub:"Aeropuerto y Urbana", cells:[
+        {week:1, type:"work", label:"Trabaja"},
+        {week:2, type:"paid", label:"Cobra: miércoles"},
+        {week:3, type:"empty", label:""}
+      ]},
+      {name:"Pago Diferido", sub:"Aerolíneas", cells:[
+        {week:1, type:"work", label:"Trabaja"},
+        {week:2, type:"empty", label:""},
+        {week:3, type:"paid", label:"Cobra: martes"}
+      ]},
+      {name:"Pago Plazas", sub:"Jockey y Mall Bellavista", cells:[
+        {week:1, type:"work", label:"Trabaja"},
+        {week:2, type:"paid", label:"Cobra: viernes"},
+        {week:3, type:"empty", label:""}
+      ]}
+    ], "Diferido: lo que se trabaja en la semana 1 se cobra en la semana 3, lo de la semana 2 en la semana 4, y así sucesivamente. · Aerolíneas: los nuevos ingresos cobran Express las primeras 3 semanas. · El pago se realiza entre las 5pm y 7pm del día que corresponda.") +
+    notes([
+      "<strong>Pago Express</strong> (Aeropuerto y Urbana): trabaja la semana 1 y cobra el miércoles de la semana 2.",
+      "<strong>Pago Diferido</strong> (Aerolíneas): lo que trabaja en la semana 1 lo cobra el martes de la semana 3; lo que trabaja en la semana 2 lo cobra el martes de la semana 4, y así sucesivamente. Los nuevos ingresos cobran como Express durante sus primeras 3 semanas.",
+      "<strong>Pago Plazas</strong> (Jockey y Mall Bellavista): trabaja la semana 1 y cobra el viernes de la semana 2."
+    ])
+  });
+  CARDS.push({section:2, tags:"cambio de cuenta de pago banco dni ce cci titular",
+    title:"Cambio de cuenta de pago",
+    badges:[{t:"🎫 Requiere ticket",c:"accent"}],
+    msg:"Puede solicitarlo desde el lunes hasta el miércoles a las 18:00 (los jueves revisamos la solicitud y actualizamos la información); el cambio rige desde su siguiente pago inmediato. Recuerde que el RUC y la cuenta de pago deben estar a nombre del mismo titular. Para esto necesitamos:",
+    rigeMsg:"El siguiente pago inmediato.",
+    reqsList:["Nombre completo del titular","DNI o CE del titular","Banco","N.º de cuenta","CCI (opcional)"],
+    confirmMsg:"Confirmar los siguientes requisitos para proceder con la solicitud del cambio a Finanzas.",
+    copyNotas:["El RUC y la cuenta de pago deben tener el mismo titular."],
+    body: solicitud({
+      plazo:"Ticket desde el lunes hasta máximo miércoles 18:00. Los jueves se revisa la solicitud y se actualiza la información.",
+      rige:"El siguiente pago inmediato.",
+      requisitos:["Nombre completo del titular","DNI o CE del titular","Banco","N.º de cuenta","CCI (opcional)"],
+      notas:["El RUC y la cuenta de pago deben tener el mismo titular."]
+    })
+  });
+  CARDS.push({section:2, tags:"cambio de ruc sunat clave sol usuario correo",
+    title:"Cambio de RUC",
+    badges:[{t:"🎫 Requiere ticket",c:"accent"}],
+    msg:"Puede solicitarlo desde el lunes hasta el miércoles a las 18:00. Si lo solicita dentro de ese plazo, el cambio rige desde su siguiente pago inmediato; si lo solicita pasado el miércoles (jueves en adelante), el cambio rige para el pago de la semana subsiguiente. Recuerde que el RUC y la cuenta de pago deben estar a nombre del mismo titular. Para esto necesitamos:",
+    rigeMsg:"\n- Dentro de plazo (lunes a miércoles 18:00): el siguiente pago inmediato.\n- Fuera de plazo (jueves en adelante): el pago de la semana subsiguiente.",
+    reqsList:["N.º de RUC","Nombre completo del titular del RUC","Usuario SUNAT","Clave SOL","Correo electrónico"],
+    confirmMsg:"Confirmar los siguientes requisitos para proceder con la solicitud del cambio a Finanzas.",
+    body: solicitud({
+      plazo:"Ticket desde el lunes hasta máximo miércoles 18:00.",
+      rige:reqs(["<strong>Dentro de plazo</strong> (lunes a miércoles 18:00): el siguiente pago inmediato.","<strong>Fuera de plazo</strong> (jueves en adelante): el pago de la semana subsiguiente."]),
+      requisitos:["N.º de RUC","Nombre completo del titular del RUC","Usuario SUNAT","Clave SOL","Correo electrónico"],
+      notas:["El RUC y la cuenta de pago deben tener el mismo titular."]
+    })
+  });
+  CARDS.push({section:2, tags:"cambio de celular numero movil",
+    title:"Cambio de celular",
+    badges:[{t:"🎫 Requiere ticket",c:"accent"}],
+    msg:"Puede solicitarlo cualquier día, y el cambio queda listo en 1 día hábil. Para esto necesitamos:",
+    rigeMsg:"1 día hábil.",
+    reqsList:["Número de móvil actual","Nuevo número celular"],
+    confirmMsg:"Confirmar los siguientes requisitos para proceder con la solicitud del cambio.",
+    body: solicitud({
+      plazo:"Ticket cualquier día.",
+      rige:"1 día hábil.",
+      requisitos:["Número de móvil actual","Nuevo número celular"]
+    })
+  });
+  CARDS.push({section:2, tags:"cambio de placa presencial",
+    title:"Cambio de placa",
+    badges:[{t:"🚫 No se ticketea",c:"positive"},{t:"Presencial",c:""}],
+    msg:"El cambio de placa se atiende de forma presencial en la oficina de Miraflores, con Jhon Diaz (924 027 030), solo los días martes y jueves, de 9:00am a 4:00pm. El cambio queda habilitado al día siguiente de la atención.",
+    body: solicitud({
+      plazo:"Presencial (no se ticketea) en la oficina de Miraflores, con Jhon Diaz (924 027 030): martes y jueves, 9:00am–4:00pm.",
+      rige:"El día siguiente.",
+      requisitos:[]
+    })
+  });
+  CARDS.push({section:2, tags:"renovacion de documentos soat licencia revision tecnica atu",
+    title:"Renovación de documentos",
+    badges:[{t:"🎫 Requiere ticket",c:"accent"}],
+    msg:"Puede solicitar la renovación de sus documentos (SOAT, licencia, revisión técnica, permiso ATU, etc.) cualquier día, y la actualización queda lista en 1 día hábil. El SOAT puede ser de cualquier aseguradora.",
+    body: solicitud({
+      plazo:"Ticket cualquier día.",
+      rige:"1 día hábil.",
+      requisitos:["Nuevos documentos: SOAT, licencia, revisión técnica, permiso ATU, etc.","El SOAT puede ser de cualquier aseguradora."]
+    })
+  });
+  CARDS.push({section:2, tags:"retiro fondo de ahorro individual powerbi beneficio",
+    title:"Retiro de fondo de ahorro individual",
+    badges:[{t:"🎫 Requiere ticket",c:"accent"}],
+    msg:"Puede solicitar el retiro de su fondo de ahorro individual cualquier día, y queda procesado en 1 día hábil. Antes de tramitarlo, confírmenos si desea continuar con el beneficio o retirarse definitivamente.",
+    body: solicitud({
+      plazo:'Ticket cualquier día (revisar el saldo en el <a href="https://app.powerbi.com/view?r=eyJrIjoiNjRjNDRmYTMtMTU5ZC00YjljLWE1M2EtNDczNzIxMDg2MjZmIiwidCI6IjhjYTdlNGRkLTNhMjEtNGViMC1iNWM3LTlhMDgzNTE2N2Q4MyJ9" target="_blank" rel="noopener">PowerBI, página 1</a>).',
+      rige:"1 día hábil.",
+      requisitos:["Confirmar con el conductor si desea continuar con el beneficio o retirarse."]
+    })
+  });
+  CARDS.push({section:2, tags:"adelanto semanal solo aerolineas app conductor finanzas",
+    title:"Adelanto semanal (solo Aerolíneas)",
+    badges:[{t:"🚫 No se ticketea",c:"positive"},{t:"App conductor",c:""}],
+    msg:"El adelanto semanal es exclusivo para la flota Aerolíneas. Usted mismo lo solicita desde la app Conductor, entre el lunes y el miércoles hasta las 9:00am. Queda validado por Finanzas el miércoles al cierre del día.",
+    body: solicitud({
+      plazo:"Por la app conductor, desde el lunes hasta el miércoles 9:00am (días específicos).",
+      rige:"Miércoles al cierre del día (validación de Finanzas).",
+      requisitos:["Se solicita por la app conductor."]
+    })
+  });
+  CARDS.push({section:2, tags:"adelanto especial prestamo app conductor finanzas",
+    title:"Adelanto especial — solicitud",
+    badges:[{t:"🚫 No se ticketea",c:"positive"},{t:"App conductor",c:""}],
+    msg:"Puede solicitarlo de la app Conductor, entre el lunes y el miércoles hasta las 9:00am. Queda validado por Finanzas; de ser aprobado, el depósito se realizará el viernes al cierre del día.",
+    body: solicitud({
+      plazo:"Por la app conductor, desde el lunes hasta el miércoles 9:00am.",
+      rige:"Viernes al cierre del día (validación de Finanzas).",
+      requisitos:["Se solicita por la app conductor."]
+    }) + credBox({
+      label:"Web de adelantos (acceso del ejecutivo)",
+      note:"Para revisar el estado de la solicitud. No compartir con el conductor.",
+      rows:[
+        {label:"Usuario", value:"supply"},
+        {label:"Contraseña", value:"supply", secret:true}
+      ],
+      openHref:"https://directoprestamo.joseph7104.workers.dev/",
+      openText:"Abrir web"
+    })
+  });
+  CARDS.push({section:2, tags:"levantamiento de suspension por papeleta sat constancia",
+    title:"Levantamiento de suspensión por papeleta",
+    badges:[{t:"🎫 Requiere ticket",c:"accent"}],
+    msg:"Puede solicitar el levantamiento cualquier día (primero validamos que la papeleta no esté vencida), y la suspensión se levanta en 1 día hábil. Debe enviarnos la constancia de pago de la papeleta, o una carta de compromiso de pago emitida por el SAT.",
+    body: solicitud({
+      plazo:"Ticket cualquier día (validar que no esté vencida).",
+      rige:"1 día hábil.",
+      requisitos:["Constancia de pago de la papeleta, o carta de compromiso de pago emitida por el SAT."]
+    })
+  });
+  CARDS.push({section:2, tags:"reconexion reactivacion afiliaciones directo ricardo tapia mirlandy gamez",
+    title:"Reconexión (reactivación)",
+    badges:[{t:"🚫 No se ticketea",c:"positive"},{t:"Llamada",c:""}],
+    msg:"La reconexión se atiende presencialmente en la oficina de Miraflores, martes y jueves de 9:30am a 4:30pm, con Ricardo Tapia (titular) o Mirlandy Gamez. Puede coordinar antes con Afiliaciones Directo al 923 129 603. Importante: en el aeropuerto no se realizan reconexiones ni reactivaciones.",
+    body: solicitud({
+      plazo:"No se crea ticket: derivar con Afiliaciones Directo.",
+      rige:"—",
+      requisitos:[],
+      notas:[
+        "Contacto: Afiliaciones Directo, 923 129 603.",
+        "Se atiende en la oficina de Miraflores, martes y jueves, 9:30am–4:30pm. Responsables: Ricardo Tapia (titular) o Mirlandy Gamez (en su defecto).",
+        "En el aeropuerto NO se realizan reconexiones ni reactivaciones."
+      ]
+    })
+  });
+  CARDS.push({section:2, tags:"afiliacion al pex produccion",
+    title:"Afiliación al PEX",
+    badges:[{t:"🚫 No se ticketea",c:"positive"},{t:"App conductor",c:""}],
+    msg:"La afiliación al PEX se solicita desde la app Conductor hasta el miércoles a las 9:00am. Debe tener mínimo 1 semana de producción en Directo. Queda habilitada en aproximadamente 1 semana en el mejor de los casos, o 2 semanas en promedio.",
+    body: solicitud({
+      plazo:"Por la app conductor, hasta el miércoles 9:00am.",
+      rige:"Aprox. 1 semana (optimista) / 2 semanas (promedio).",
+      requisitos:["Mínimo 1 semana de producción en Directo."]
+    })
+  });
+  CARDS.push({section:2, tags:"desafiliacion al pex",
+    title:"Desafiliación al PEX",
+    badges:[{t:"🚫 No se ticketea",c:"positive"},{t:"App conductor",c:""}],
+    msg:"La desafiliación al PEX se solicita desde la app Conductor cualquier día, y queda procesada en aproximadamente 2 semanas en promedio.",
+    body: solicitud({
+      plazo:"Por la app conductor, cualquier día.",
+      rige:"Aprox. 2 semanas (promedio).",
+      requisitos:[]
+    })
+  });
+  CARDS.push({section:2, tags:"servicio contable afiliar desafiliar factura declaracion",
+    title:"Servicio contable — afiliar / desafiliar",
+    badges:[{t:"🚫 No se ticketea",c:"positive"},{t:"App conductor",c:""}],
+    msg:"Afiliarse o desafiliarse del servicio contable se gestiona desde la app Conductor hasta el miércoles a las 9:00am, y rige desde la primera liquidación del mes siguiente. Recuerde que Directo solo emite sus facturas semanales (costo S/12 al mes); la declaración mensual a SUNAT la debe hacer usted mismo.",
+    body: solicitud({
+      plazo:"Por la app conductor, hasta el miércoles 9:00am.",
+      rige:"Desde la primera liquidación del siguiente mes.",
+      requisitos:["Directo solo emite las facturas; no realiza las declaraciones (costo S/12)."]
+    })
+  });
+  CARDS.push({section:2, tags:"utilizacion de cupones saldo domingo",
+    title:"Utilización de cupones",
+    badges:[{t:"🚫 No se ticketea",c:"positive"},{t:"App conductor",c:""}],
+    msg:"El uso de cupones se solicita desde la app Conductor hasta el domingo a las 5:00pm (en la app no se ve el saldo de cupones disponible). Para usarlos debe haber trabajado 6 de los 7 días de la semana, y puede usar hasta 6 cupones por semana.",
+    body: solicitud({
+      plazo:"Por la app conductor, hasta el domingo 5:00pm (en el app no se visualiza el saldo de cupones).",
+      rige:"Para los días solicitados.",
+      requisitos:["Debe trabajar 6 de 7 días de la semana.","Hasta 6 cupones por semana."]
+    })
+  });
+  CARDS.push({section:2, tags:"exoneracion de membresia choque descanso medico fallecimiento",
+    title:"Exoneración de membresía",
+    badges:[{t:"🚫 No se ticketea",c:"positive"}],
+    msg:"La exoneración de membresía sigue el flujo de aprobación Supply → Finanzas (motivos válidos: fallecimiento de familiar directo, choque o accidente, enfermedad, errores internos de la empresa, o falta de unidad — ver el detalle completo en Permisos especiales). Si el motivo no calza en ninguno de los válidos, la exoneración no procede y debe usar sus cupones.",
+    body: solicitud({
+      plazo:"Ver Sección 10 (Permisos especiales).",
+      rige:"Motivos: choque, descanso médico, fallecimiento de familiar directo.",
+      requisitos:[],
+      notas:["Si el motivo no calza en ninguno de los válidos, la exoneración no procede."]
+    })
+  });
+  CARDS.push({section:2, tags:"cambio de codigo de pareo routing soporte",
+    title:"Cambio de código de pareo",
+    badges:[{t:"🚫 No se ticketea",c:"positive"},{t:"Llamada",c:""}],
+    msg:"Para el cambio de código de pareo, comuníquese con Soporte Routing al 956 352 681 (lunes a sábado, 9:00am a 5:00pm; domingos y feriados no atienden). Se necesita un código nuevo cuando cambia de celular o resetea su teléfono.",
+    body: solicitud({
+      plazo:"No se crea ticket: ver Sección 11 (Códigos de pareo).",
+      rige:"Flota Aerolíneas — solo llamar a Soporte.",
+      requisitos:["Soporte Routing: 956 352 681"]
+    })
+  });
+
+  // Section 3 — Dudas frecuentes
+  function duda(title, tags, pedir, hacer, badges, msg){
+    CARDS.push({section:3, tags:tags, title:title, badges:badges, msg:msg,
+      body: kv([["¿Qué solicitar al conductor?", pedir], ["¿Qué hacer?", hacer]])
+    });
+  }
+  duda("Detalle de descuento de peajes", "peajes pex detalle liquidacion excel",
+    "Liquidación por la cual reclama (en Excel).",
+    "Subir la liquidación a la web de lectura de liquidación y descargar el detalle de PEX (ver Contactos rápidos).",
+    undefined,
+    "Para revisar el detalle de los peajes descontados, cargue su liquidación (en Excel) en la web de lectura de liquidación (ver Contactos rápidos): ahí puede descargar el detalle completo de PEX.");
+  duda("No recibió el pago de la semana", "no recibio pago semana express diferido factura",
+    "Liquidación por la cual reclama (en Excel).",
+    "Validar: ¿Tiene pago Express o Diferido? ¿Tiene servicio contable? ¿Emitió su factura en el plazo correcto? ¿Por el monto correcto?",
+    undefined,
+    "Estamos revisando su caso con la liquidación de esa semana: si tiene pago Express o Diferido, si tiene servicio contable, y si emitió su factura dentro del plazo y por el monto correcto. El pago procede una vez que se cumplen estas condiciones; le confirmamos apenas lo validemos.");
+  duda("Recibió un monto menor al indicado en la liquidación", "monto menor retencion sunat retenciones por movil finanzas",
+    "Liquidación por la cual reclama (en Excel), o el N.° de móvil.",
+    'Validar si tiene una retención SUNAT: buscá su N.° de móvil en <a href="https://claude.ai/artifact/16L3MLykYqWnJAZBx4Bksy" target="_blank" rel="noopener">Retenciones por Móvil</a> (se carga cada semana con lo que comparte Finanzas) y copiá la respuesta para el conductor desde ahí.',
+    undefined,
+    "Ese descuento suele deberse a una retención SUNAT sobre su móvil. Estamos validando su número de móvil para confirmarle el motivo exacto y el monto retenido.");
+  duda("Queja por peajes no reconocidos de aerolíneas", "peajes no reconocidos aerolineas latam sky",
+    "Constancia de autorizaciones de peaje por parte del equipo de aerolíneas (LATAM/SKY).",
+    "Ticketear.", [{t:"🎫 Requiere ticket",c:"accent"}],
+    "Para tramitar su reclamo de peajes no reconocidos de aerolíneas, necesitamos la constancia de autorización de peaje emitida por el equipo de aerolíneas (LATAM/SKY).");
+  duda("Conductor desea apoyar a aerolíneas", "apoyar aerolineas e6 supply",
+    "—", "Ticketear.", [{t:"🎫 Requiere ticket",c:"accent"}],
+    "Tramitamos su solicitud para apoyar en el servicio de aerolíneas y le confirmamos cuando quede habilitado.");
+  duda("Conductor desea apoyar a aeropuerto", "apoyar aeropuerto lap documentacion declaracion jurada",
+    "—", "Ticketear. Indicar que se le solicitará documentación para LAP: cartilla, credencial, TUC, antecedentes penales/policiales/judiciales, DNI, licencia, SOAT y revisión técnica, además de una declaración jurada.",
+    [{t:"🎫 Requiere ticket",c:"accent"}],
+    "Para apoyar en el servicio de aeropuerto le solicitaremos documentación para LAP: cartilla, credencial, TUC, antecedentes penales, policiales y judiciales, DNI, licencia, SOAT y revisión técnica, más una declaración jurada.");
+
+  // Section 4 — Adelantos y fondo personal
+  CARDS.push({section:4, tags:"adelanto semanal adelanto especial fondo personal diferencia no confundir",
+    title:"Adelanto semanal vs. adelanto especial vs. fondo personal",
+    msg:"Estos tres conceptos no deben confundirse. El adelanto semanal (solo Aerolíneas) adelanta su pago: en vez de cobrar el martes de la semana subsiguiente, cobra el miércoles de la semana inmediata, con una comisión de 2.5%; se solicita por la app Conductor hasta el miércoles 9:00am. El adelanto especial es un préstamo de Directo (S/500 o S/1,000, con 20% de costo total, en 6 cuotas semanales), disponible para cualquier flota, y se solicita igual por la app hasta el miércoles 9:00am (rige el viernes). El fondo personal es un ahorro suyo: se descuenta poco a poco cada semana y se le devuelve dos veces al año (julio y diciembre) o cuando usted lo solicite.",
+    msgSections:[
+      ["Adelanto semanal","Adelanta el pago a un conductor con pago diferido (Aerolíneas): en vez de cobrar el martes de la semana subsiguiente, cobra el miércoles de la semana inmediata. Costo: comisión de 2.5%. Se solicita por la app conductor hasta el miércoles 9:00am (validación de Finanzas)."],
+      ["Adelanto especial","Es un préstamo que da Directo, con descuento semanal. Aplica a cualquier flota. Solo por S/500 o S/1,000. Costo: 20% (descontado en 6 cuotas). Se solicita por la app conductor hasta el miércoles 9:00am, rige el viernes (validación de Finanzas)."],
+      ["Fondo personal","Es un ahorro del conductor: se descuenta poco a poco cada semana para acumularse. Se devuelve 2 veces al año (julio y diciembre) o a solicitud."]
+    ],
+    body:
+      sub("Adelanto semanal") +
+      '<p>Adelanta el pago a un conductor con pago diferido (Aerolíneas): en vez de cobrar el martes de la semana subsiguiente, cobra el miércoles de la semana inmediata. Costo: comisión de 2.5%. Se solicita por la app conductor hasta el miércoles 9:00am (validación de Finanzas).</p>' +
+      sub("Adelanto especial") +
+      '<p>Es un préstamo que da Directo, con descuento semanal. Aplica a cualquier flota. Solo por S/500 o S/1,000. Costo: 20% (descontado en 6 cuotas). Se solicita por la app conductor hasta el miércoles 9:00am, rige el viernes (validación de Finanzas). Detalle de cuotas en la siguiente ficha.</p>' +
+      sub("Fondo personal") +
+      '<p>Es un ahorro del conductor: se descuenta poco a poco cada semana para acumularse. Se devuelve 2 veces al año (julio y diciembre) o a solicitud. Para el retiro: validar en el BI si cuenta con ahorro, consultar si desea continuar con el beneficio o retirarse, y generar el ticket.</p>'
+  });
+  CARDS.push({section:4, tags:"adelanto especial cuotas seguimiento prestamo 500 1000 powerbi liquidaciones",
+    title:"Adelanto especial — cuotas y seguimiento",
+    badges:[{t:"App conductor",c:""}],
+    msg:"El adelanto especial se descuenta en 6 cuotas semanales, con 20% de costo total: si pidió S/500, son 6 cuotas de S/100 (total S/600); si pidió S/1,000, son 6 cuotas de S/200 (total S/1,200). Se solicita por la app Conductor hasta el miércoles 9:00am y rige el viernes, con validación de Finanzas, aplicando a cualquier flota. Puede revisar en qué cuota va consultando el PowerBI de Liquidaciones, o el estado de su solicitud en la web de adelantos. Si no figura ahí, es porque lo solicitó fuera del rango permitido; Finanzas tampoco lo aprueba si tiene baja producción o un adelanto pendiente de terminar de pagar.",
+    body:
+      dataTable(["Préstamo","N.º de cuotas","Monto por cuota","Total a descontar"], [
+        ["S/500","6 cuotas semanales","S/100","S/600"],
+        ["S/1000","6 cuotas semanales","S/200","S/1200"]
+      ]) +
+      notes(["Costo del préstamo: 20%.","Para saber en qué cuota va el conductor, revisar el PowerBI de Liquidaciones.","Se solicita por la app conductor hasta el miércoles 9:00am; rige el viernes (validación de Finanzas); aplica a cualquier flota."]) +
+      kv([["Estado del adelanto", 'Se consulta en <a href="https://directoprestamo.joseph7104.workers.dev/" target="_blank" rel="noopener">directoprestamo.joseph7104.workers.dev</a> · usuario/clave: <code>supply</code>. No enviar este link a los conductores.']]) +
+      notes(["Si el conductor no figura en la web, es porque lo solicitó fuera del rango establecido.","Finanzas no lo aprueba si el conductor tiene baja producción o un adelanto por terminar de pagar."])
+  });
+
+  // Section 5 — Pago por flota
+  CARDS.push({section:5, tags:"pago express diferido plazas cuando cobra miercoles martes viernes",
+    title:"Pago Express vs. Diferido vs. Plazas",
+    msg:"El día en que usted cobra depende de su flota, y no es la misma semana en que trabaja. En Express (Aeropuerto y Urbana): trabaja la semana 1 y cobra el miércoles de la semana 2. En Diferido (Aerolíneas): lo que trabaja en la semana 1 lo cobra el martes de la semana 3, lo que trabaja en la semana 2 lo cobra el martes de la semana 4, y así sucesivamente (2 semanas de rezago). En Plazas (Jockey y Mall Bellavista): trabaja la semana 1 y cobra el viernes de la semana 2. Si es nuevo ingreso en Aerolíneas, cobrará como Express durante sus primeras 3 semanas. El pago se realiza entre las 5:00pm y 7:00pm del día que corresponda.",
+    paySchemeTable:{headers:["Esquema","Cuándo cobra","Flotas"], rows:[
+      ["Express","Miércoles de la semana siguiente a la trabajada","Aeropuerto y Urbana"],
+      ["Diferido","Martes, dos semanas después de la trabajada","Aerolíneas"],
+      ["Plazas","Viernes de la semana siguiente a la trabajada","Jockey y Mall Bellavista"]
+    ]},
+    body:
+      payWeekGrid([
+        {name:"Pago Express", sub:"Aeropuerto y Urbana", cells:[
+          {week:1, type:"work", label:"Trabaja"},
+          {week:2, type:"paid", label:"Cobra: miércoles"},
+          {week:3, type:"empty", label:""}
+        ]},
+        {name:"Pago Diferido", sub:"Aerolíneas", cells:[
+          {week:1, type:"work", label:"Trabaja"},
+          {week:2, type:"empty", label:""},
+          {week:3, type:"paid", label:"Cobra: martes"}
+        ]},
+        {name:"Pago Plazas", sub:"Jockey y Mall Bellavista", cells:[
+          {week:1, type:"work", label:"Trabaja"},
+          {week:2, type:"paid", label:"Cobra: viernes"},
+          {week:3, type:"empty", label:""}
+        ]}
+      ]) +
+      notes(["Diferido: lo que se trabaja en la semana 1 se cobra el martes de la semana 3, lo de la semana 2 el martes de la semana 4, y así sucesivamente.","Aerolíneas: los nuevos ingresos cobran Express las primeras 3 semanas.","El pago se realiza entre las 5:00pm y 7:00pm del día que corresponda."])
+  });
+  CARDS.push({section:5, tags:"plazo para facturar por flota factura sin prorroga",
+    title:"Plazo para facturar por flota",
+    msg:"El plazo para facturar depende de su flota. En Aeropuerto y Urbana (Express) se paga el miércoles de 5 a 7pm y debe facturar desde el martes que se emite la liquidación hasta el miércoles a las 9:00am, sin prórroga. En Aerolíneas (Diferido) se paga el martes de 5 a 7pm y debe facturar desde el martes hasta el martes siguiente a las 7:59am, sin prórroga. En Plazas se paga el viernes de 5 a 7pm y debe facturar hasta el viernes a las 8:00am, sin prórroga. Si tiene servicio contable, usted NO debe emitir facturas; si no lo tiene, debe respetar estos plazos y montos para que el pago proceda. Si tiene dudas sobre su liquidación, puede descargar el detalle en Excel desde la app.",
+    body:
+      dataTable(["Flota","Se paga","Plazo para facturar"], [
+        ["Aeropuerto (Express)","Miércoles, 5–7pm","Desde el martes que se emite la liquidación hasta el miércoles 9:00am, sin prórroga."],
+        ["Urbana (Express)","Miércoles, 5–7pm","Desde el martes que se emite la liquidación hasta el miércoles 9:00am, sin prórroga."],
+        ["Aerolíneas (Diferido)","Martes, 5–7pm","Desde el martes hasta el martes siguiente 7:59am, sin prórroga."],
+        ["Plazas","Viernes, 5–7pm","Liquidación sube entre martes y jueves; se factura hasta el viernes 8:00am, sin prórroga."]
+      ], true) +
+      notes(["Aerolíneas: los nuevos ingresos facturan y cobran como Express las primeras 3 semanas.","Si el conductor tiene dudas sobre su liquidación, pedirle que la descargue con detalle en Excel desde su app.","Si tiene servicio contable, NO debe emitir facturas.","Si no tiene servicio contable, debe respetar los plazos y montos de facturación para que el pago proceda."])
+  });
+
+  // Section 6 — Servicio contable
+  CARDS.push({section:6, tags:"servicio contable que incluye costo factura sunat declaracion",
+    title:"Servicio contable — qué incluye y cuánto cuesta",
+    msg:"El servicio contable es opcional: con él, Directo emite sus facturas semanales para que pueda cobrar. Cuesta S/12 al mes, que se cobra una sola vez y por adelantado en la primera semana del mes (se cobra aunque el periodo tenga solo un día del nuevo mes). Solo se emite la factura: la declaración mensual a SUNAT la debe hacer usted. Se afilia o desafilia desde la app Conductor hasta el miércoles a las 9:00am, y rige desde la primera liquidación del mes siguiente. Si no tiene el servicio, debe facturar por su cuenta con un contador particular.",
+    body:
+      '<p>Servicio <strong>opcional</strong> con el que Directo emite las facturas del conductor cada semana para que pueda cobrar.</p>' +
+      notes([
+        "Directo emite las facturas semanales del conductor.",
+        "Costo: S/12 al mes, cobrado una sola vez y por adelantado, en la primera semana del mes (se cobra aunque el periodo tenga un solo día del nuevo mes).",
+        "Solo se emite la factura: la declaración mensual a SUNAT la hace el conductor.",
+        "Se gestiona por la app conductor hasta el miércoles 9:00am (no se ticketea).",
+        "Rige desde la primera liquidación del siguiente mes.",
+        "Quien no tiene el servicio, factura por su cuenta con un contador particular."
+      ])
+  });
+  CARDS.push({section:6, tags:"servicio contable ejemplo cobro mensual semana cronograma",
+    title:"Servicio contable — ejemplo del cobro mensual",
+    msg:"El cobro del servicio contable sigue la semana en la que cae el domingo, no el mes calendario. Por ejemplo, el domingo 01/11 pertenece a la semana 44 (26/10 al 01/11): aunque casi toda esa semana es de octubre, como el domingo ya es noviembre, el servicio contable de noviembre se descuenta en la liquidación de la semana 44 (que se emite en la semana 45). Puede revisar el cronograma completo del año en el resumen de Cronograma de servicio contable.",
+    body:
+      '<p>El domingo 01/11 pertenece a la semana 44 (26/10 al 01/11). Aunque casi toda la semana es de octubre, el domingo ya es noviembre → el servicio contable se descuenta en la liquidación de la semana 44 (que se emite en la semana 45).</p>' +
+      '<p style="color:var(--muted); font-size:13px;">Ver el cronograma completo de cobro 2026 en la Sección 13.</p>'
+  });
+
+  // Section 7 — Conceptos de la liquidación
+  CARDS.push({section:7, tags:"descuentos de la liquidacion conceptos membresia uniforme excedente comision",
+    title:"Descuentos de la liquidación",
+    msg:"Estos son los descuentos que puede ver en su liquidación: Servicio Contable (S/12 al mes), Membresía (pago semanal fijo según su flota), Uniforme (costo de prendas o herramientas entregadas), Fondo de Ahorro Individual (ahorro voluntario semanal, se devuelve 2 veces al año o a solicitud), Excedente Svc Origen Aeropuerto (solo Aeropuerto, si supera el tope de producción urbana), Adelanto Especial (cuota semanal de su préstamo), Costo Adm. – Adelanto de Pago (2.5% si adelantó su pago en Aerolíneas), Comisión Efectivos – Transportes Limeños (saldo negativo pendiente de la semana anterior) y Regularización de Svc (corrección por tarifa mal cobrada o viaje anulado, donde también puede aparecer una retención de SUNAT).",
+    body: dataTable(["Concepto","Qué significa"], [
+      ["Servicio Contable","Costo mensual de la factura. S/12."],
+      ["Membresía","Pago semanal fijo según la flota."],
+      ["Uniforme","Costo de prendas o herramientas entregadas."],
+      ["Fondo de Ahorro Individual","Ahorro voluntario semanal; se devuelve 2 veces al año o a solicitud (deudas se descuentan antes)."],
+      ["Excedente Svc Origen Aeropuerto","Solo flota Aeropuerto que supera el tope de producción en servicios urbanos (S/960 base; baja S/160 por cada cupón). Se cobra 25% de comisión sobre el excedente."],
+      ["Adelanto Especial","Cuota semanal del préstamo solicitado."],
+      ["Costo Adm. – Adelanto de Pago","2.5% de comisión a Aerolíneas por adelantar su pago semanal."],
+      ["Comisión Efectivos – Transportes Limeños","Saldo negativo pendiente de la semana anterior (efectivo / Yape)."],
+      ["Regularización de Svc","Corrección por tarifa mal cobrada o viaje anulado. Aquí también se muestra la retención de SUNAT (puede aplicarse sin mostrarse en la liquidación)."]
+    ], true)
+  });
+  CARDS.push({section:7, tags:"descuentos pex liquidacion cuadre membresia sticker incidencias",
+    title:"Descuentos de PEX: liquidación vs. cuadre",
+    msg:"Los descuentos de PEX pueden aparecer en dos momentos distintos, que no siempre coinciden en la misma semana. En su liquidación puede ver: Adicional Pex con servicio (S/0.30 por cada servicio con PEX), Membresía Pex (S/3.50 semanales, solo Aeropuerto), Sticker Pex (pago único de S/20) y Pex Incidencias en efectivo (peaje usado en un servicio pagado en efectivo). En el cuadre de PEX puede ver: Pex Personal (peajes usados sin servicio de Directo), Adicional Pex Personal (S/0.30 extra por cada peaje personal) y Pex Incidencias por incidencia (un servicio donde no se registró el peaje en el aplicativo).",
+    body:
+      '<p>La semana del cuadre de PEX puede no coincidir con la de la liquidación, porque depende de los reportes de PEX.</p>' +
+      sub("Relativos a la liquidación") +
+      dataTable(["Concepto","Qué significa"], [
+        ["Adicional Pex con servicio (no APTO)","S/0.30 por cada servicio con PEX (por servicio, sin importar cuántos peajes)."],
+        ["Membresía Pex","S/3.50 semanales fijos — solo flota Aeropuerto."],
+        ["Sticker Pex","Pago único de S/20."],
+        ["Pex Incidencias (en efectivo)","Peaje usado en un servicio pagado en efectivo."]
+      ]) +
+      sub("Relativos al cuadre de PEX") +
+      dataTable(["Concepto","Qué significa"], [
+        ["Pex Personal","Peajes usados de forma personal (sin servicio de Directo)."],
+        ["Adicional Pex Personal","S/0.30 extra por cada peaje personal."],
+        ["Pex Incidencias (incidencia)","Servicio realizado en el que no se registró el peaje en el aplicativo."]
+      ])
+  });
+  CARDS.push({section:7, tags:"reposiciones informativos bono traslado propinas cupones fondo ahorro",
+    title:"Reposiciones e informativos",
+    msg:"Estos montos se le devuelven a favor: Bono de traslado (por trasladarse hasta el origen del servicio a recoger al pasajero), Propinas (reembolso de propinas pagadas con VISA), Servicio con Promoción (diferencia a favor por viajes en efectivo con descuento) y Regularización de Svc (devolución por error de tarifa de semanas anteriores). Además, verá de forma solo informativa los cupones acumulados por días conectado y el total ahorrado en su Fondo de Ahorro. Puede ver el detalle completo cargando su liquidación en la web de lectura de liquidación (ver Contactos rápidos).",
+    body:
+      sub("💰 Le devuelven (a favor)") +
+      notes([
+        "Bono de traslado: monto no comisionable por trasladarse desde donde acepta el servicio hasta el origen del servicio (para recoger al pasajero).",
+        "Propinas: reembolso de propinas de viajes pagados con VISA.",
+        "Servicio con Promoción: diferencia a favor por viajes en efectivo con descuento.",
+        "Regularización de Svc: devolución por error de tarifa de semanas anteriores.",
+        "Desafío / Beneficio ATU: actualmente no se usan."
+      ]) +
+      sub("ℹ️ Solo informativo") +
+      notes([
+        "Cupones acumulados por días conectado.",
+        "Total ahorrado en el Fondo de Ahorro (cobrable en julio, diciembre, o a solicitud)."
+      ]) +
+      '<p style="font-size:13px; color:var(--muted);">Detalle visible en <a href="https://directo-central.github.io/lectura_liquidacion/" target="_blank" rel="noopener">directo-central.github.io/lectura_liquidacion</a>, cargando la liquidación del conductor.</p>'
+  });
+
+  // Section 8 — Suspensiones
+  CARDS.push({section:8, tags:"suspension por papeleta comandos del conductor incidencias susp desac sat",
+    title:"Suspensión por papeleta — cómo revisar y gestionar",
+    badges:[{t:"Urgente",c:"warn"},{t:"🎫 Requiere ticket",c:"accent"}],
+    msg:"Si está suspendido por una papeleta, debe enviarnos la constancia de pago de la papeleta o una carta de compromiso de pago emitida por el SAT. Con eso generamos un ticket y la suspensión se levanta en 1 día hábil.",
+    body:
+      '<p>Se revisa en el sistema <strong>Comandos del Conductor</strong>, en las pestañas <strong>Incidencias</strong> y <strong>Susp./Desac.</strong></p>' +
+      kv([
+        ["Qué pedir al conductor","Constancia de pago de la papeleta, o carta de compromiso de pago emitida por el SAT."],
+        ["Cómo se gestiona","Por ticket."],
+        ["Rige","1 día hábil."]
+      ])
+  });
+
+  // Section 9 — Cambio de flota: reglas e info por flota
+  CARDS.push({section:9, tags:"reglas por defecto cambiar de flota aerolineas urbana plazas aeropuerto mirella hurtado supervisor",
+    title:"Reglas por defecto al cambiar de flota",
+    msg:"Al cambiar de flota aplican estas reglas por defecto: en Aerolíneas siempre ingresa a LATAM (el cambio a SKY o Jetsmart lo evalúan los jefes de operación); en Urbana ingresa con 29% de comisión (el 27.9% es solo para conductores antiguos); en Plazas siempre valida con Mirella Hurtado, supervisor de Plazas; y en Aeropuerto todos ingresan eligiendo modalidad Diurna o Nocturna (la modalidad Regular es solo para conductores antiguos). Cada sábado se actualizan los grupos de WhatsApp de la nueva flota.",
+    body:
+      dataTable(["Destino","Regla por defecto"], [
+        ["Aerolíneas","Siempre entra a LATAM. Los cambios a SKY o Jetsmart los evalúan los jefes de operación."],
+        ["Urbana","Entra con comisión 29%. El 27.9% es para conductores antiguos; si un antiguo cambia de flota, la excepción se evalúa con Jordan y Sergio."],
+        ["Plazas","Siempre valida con Mirella Hurtado, supervisor de Plazas."],
+        ["Aeropuerto","Todos entran eligiendo Diurna o Nocturna. La modalidad Regular es solo para conductores antiguos (no está abierta a nuevos)."]
+      ], true) +
+      notes(["Cada sábado se actualizan los grupos de WhatsApp del conductor (Supply) y se informa a la jefatura de operación los nuevos ingresos (código de móvil, nombre, flota, fecha)."])
+  });
+  CARDS.push({section:9, tags:"flota aeropuerto membresia comisiones lite comfort xl diurna nocturna van",
+    title:"Flota Aeropuerto — membresía y comisiones",
+    badges:[{t:"Pago Express (miércoles)",c:""}],
+    msg:"En la flota Aeropuerto se cobra en modalidad Express (miércoles) y debe facturar hasta el miércoles a las 9:00am. Al ingresar, elige modalidad Diurna o Nocturna (la Regular es solo para conductores antiguos). La membresía semanal depende de su modalidad y tipo de vehículo: Regular S/265 (Lite) / S/240 (Comfort, XL) / S/235 (Comfort XL); Diurna y Nocturna S/315 (Lite) / S/290 (Comfort, XL) / S/285 (Comfort XL). Si tiene vehículo VAN, la membresía es S/240 semanales con 22% de comisión en todos los servicios. Su comisión general es 27.9% (Regular todo el día; Diurna 6am–9pm y Nocturna 4pm–8am, con 35% fuera de esos horarios) en servicios con origen Aeropuerto, Aerolíneas y Destino Aeropuerto; en Urbano es 17.9% para servicios mayores a S/30 y 0% para servicios de S/30 o menos; y en Plazas es 25%.",
+    body:
+      '<p>Facturación hasta el miércoles 9:00am · Nuevos ingresos eligen Diurna o Nocturna (Regular solo para antiguos).</p>' +
+      sub("Membresía semanal (S/)") +
+      dataTable(["Modalidad","Lite","Comfort","XL","Comfort XL"], [
+        ["Regular","265","240","240","235"],
+        ["Diurna","315","290","290","285"],
+        ["Nocturna – Apto","315","290","290","285"]
+      ]) +
+      '<p style="font-size:13px;">Aeropuerto Van (solo vehículos VAN): S/240 semanal · 22% de comisión en todos los servicios.</p>' +
+      sub("Comisiones") +
+      dataTable(["Modalidad","Origen Aeropuerto","Urbano","Aerolíneas","Destino Aer.","Origen Plazas"], [
+        ["Regular","27.9% todo el día","17.9% (>S/30) / 0% (≤S/30)","27.9%","27.9%","25%"],
+        ["Diurna","27.9% (6am–9pm) / 35% fuera","17.9% (>S/30) / 0% (≤S/30)","27.9%","27.9%","25%"],
+        ["Nocturna – Apto","27.9% (4pm–8am) / 35% fuera","17.9% (>S/30) / 0% (≤S/30)","27.9%","27.9%","25%"]
+      ], true) +
+      notes(["Para servicios de Plazas, la comisión es de 25%."])
+  });
+  CARDS.push({section:9, tags:"flota aerolineas latam sky jetsmart subflota diferido comision adelanto",
+    title:"Flota Aerolíneas (LATAM · SKY · JetSmart)",
+    badges:[{t:"Pago Diferido (martes)",c:""}],
+    msg:"En la flota Aerolíneas se cobra en modalidad Diferido (martes); si es nuevo ingreso, cobra como Express durante sus primeras 3 semanas. Debe facturar del martes hasta el martes siguiente a las 7:59am. Su comisión es 25% en servicios de Aerolíneas, Urbanos, Destino y Origen Plazas, y 43.5% en servicios con Origen Aeropuerto (igual en las tres subflotas). Por defecto ingresa a LATAM; el cambio a SKY o Jetsmart lo evalúan los jefes de operación. Puede solicitar el adelanto semanal (cobrar antes) con una comisión de 2.5%.",
+    body:
+      '<p>Nuevos ingresos: pago Express las primeras 3 semanas · Facturación: del martes al martes siguiente 7:59am.</p>' +
+      dataTable(["Tipo de servicio","Comisión"], [
+        ["Servicios Aerolíneas","25%"],
+        ["Servicios Urbanos","25%"],
+        ["Servicios Destino","25%"],
+        ["Servicios Origen Aeropuerto","43.5%"],
+        ["Servicios Origen Plazas","25%"]
+      ]) +
+      sub("Asignación de subflota") +
+      '<p>Por defecto se asigna LATAM. Los cambios a SKY y Jetsmart los evalúan los jefes de operación.</p>' +
+      sub("Adelanto de pago") +
+      '<p>Puede solicitar el adelanto semanal (cobrar antes) con una comisión de 2.5%. Las tres subflotas mantienen las mismas condiciones.</p>'
+  });
+  CARDS.push({section:9, tags:"flota urbana membresia partner regular comision",
+    title:"Flota Urbana",
+    badges:[{t:"Pago Express (miércoles)",c:""},{t:"Vigente desde 03/08/2026",c:"accent"}],
+    msg:"En la flota Urbana se cobra en modalidad Express (miércoles) y debe facturar hasta el miércoles a las 9:00am. Por defecto ingresa como Urbano Partner con 29% de comisión (el 27.9%, Urbano Regular, es solo para conductores antiguos). Si toma la Membresía Urbana (S/280 semanales, cupos limitados), no paga comisión en Urbanos y Destino de 4am a 10am y de 4pm a 11pm; fuera de ese horario paga 27.9% en servicios mayores a S/30 y 0% en servicios de S/30 o menos, y 10% los sábados, domingos y feriados. En servicios con Origen Aeropuerto la comisión es 46.4% (baja a 40% con Membresía Urbana o siendo Regular) o 47.5%/43% siendo Partner; en Origen Plazas la comisión es 25% en todos los casos. Estos cambios rigen desde el 03/08/2026.",
+    body:
+      '<p>Facturación hasta el miércoles 9:00am · Por defecto: 29% (el 27.9% es solo para antiguos).</p>' +
+      '<p style="font-size:13px;">Membresía Urbana: S/280 semanal (mismo valor para cualquier tipo de vehículo). Cupos limitados.</p>' +
+      sub("Comisiones por submodalidad") +
+      dataTable(["Submodalidad","Urbanos y Destino","Aerolíneas","Origen Aeropuerto","Origen Plazas"], [
+        ["Urbano Regular (antiguos)","27.9%","27.9%","46.4% → 40.00%","25%"],
+        ["Urbano Partner (por defecto)","29%","29%","47.5% → 43.00%","25%"],
+        ["Membresía Urbana (S/280)","0% en 4am–10am y 4pm–11pm *","15% → 27.9%","46.4% → 40.00%","25%"]
+      ], true) +
+      notes(["* Fuera de esos horarios: 27.9% para servicios >S/30 / 0% para servicios ≤S/30. Sábados, domingos y feriados: 10% de comisión."])
+  });
+  CARDS.push({section:9, tags:"flota plazas jockey mall bellavista mirella hurtado supervisor membresia",
+    title:"Flota Plazas — Jockey vs. Mall Bellavista",
+    badges:[{t:"Pago viernes",c:""},{t:"Vigente desde 03/08/2026",c:"accent"}],
+    msg:"La flota Plazas tiene un esquema propio: su liquidación sube entre martes y jueves, factura hasta el viernes a las 8:00am y se paga ese mismo viernes de 5 a 7pm. Al cambiarse, siempre valida con Mirella Hurtado, supervisor de Plazas. La membresía es S/240 en Jockey Plaza o S/180 en Mall Bellavista. En servicios con Origen Aeropuerto la comisión es 25% en horario de alta demanda (lunes y miércoles de 9am a 12pm, y todos los días de 4pm a 12am) o 33% el resto del tiempo; en Destino Aeropuerto es 25%; y en servicios Aerolíneas y Urbanos no paga comisión hasta cubrir el monto de su membresía (máximo S/240 en Jockey o S/180 en Bellavista), y luego paga 15%. Estos cambios rigen desde el 03/08/2026.",
+    body:
+      '<p>Esquema propio: liquidación sube martes–jueves · se factura hasta el viernes 8:00am · se paga el mismo viernes 5–7pm.</p>' +
+      notes(["Siempre valida con Mirella Hurtado, supervisor de Plazas."]) +
+      dataTable(["","Jockey Plaza","Mall Bellavista"], [
+        ["Membresía","S/240","S/180"]
+      ]) +
+      sub("Comisiones (iguales en ambas subflotas)") +
+      dataTable(["Tipo de servicio","Comisión"], [
+        ["Origen Aeropuerto","28.5% → 25% y 33%"],
+        ["Destino Aeropuerto","25%"],
+        ["Servicios Aerolíneas y Urbanos","0% hasta cubrir el monto de la membresía; luego 15%. Jockey: máx. producción S/240 para estos servicios. Bellavista: máx. producción S/180."]
+      ]) +
+      notes(["25% en horario de alta demanda: lunes y miércoles 9am–12pm + lunes a domingo 4pm–12am (medianoche).","33% en el resto de días/horas."])
+  });
+
+  // Section 10 — Permisos especiales
+  CARDS.push({section:10, tags:"exoneracion de membresia proceso de aprobacion supply finanzas cupones",
+    title:"Exoneración de membresía — proceso de aprobación",
+    msg:"La exoneración de la cuota de membresía solo procede con documentación completa, siguiendo este flujo: usted presenta su solicitud con sustentos a Supply, Supply revisa que cumpla los requisitos y comunica el caso a Finanzas con los documentos, y Finanzas confirma si procede o no. Si su caso no tiene evidencia suficiente o no encaja en los motivos válidos, debe usar sus cupones en su lugar.",
+    body:
+      '<p>Es la exoneración del pago de la cuota de membresía. Solo procede con documentación completa.</p>' +
+      steps([
+        "El conductor presenta su solicitud + sustentos al área de Supply.",
+        "Supply revisa y valida que cumpla los requisitos.",
+        "Supply comunica el caso a Finanzas con los documentos.",
+        "Finanzas confirma si procede o no la exoneración."
+      ]) +
+      notes(["Solo se procesan solicitudes con documentación completa; los casos sin evidencia o con sustento insuficiente no son válidos.","Cualquier otro criterio fuera de lo establecido → el conductor debe hacer uso de sus cupones."])
+  });
+  CARDS.push({section:10, tags:"motivos validos exoneracion membresia fallecimiento choque enfermedad errores internos sin unidad",
+    title:"Motivos válidos para la exoneración de membresía",
+    msg:"La exoneración de membresía procede en estos casos, según el motivo: fallecimiento de familiar de 1er grado (padres, hijos, cónyuge/pareja), hasta 7 días con certificado de defunción, o de 2do grado (hermanos, abuelos, nietos), hasta 5 días — si necesita más días, debe usar cupones o desactivarse; choque, accidente o desperfecto mecánico complejo, usando cupones si son menos de 5 días, adjuntando proforma del taller o factura/boleta más documento de internamiento si son hasta 14 días, o enviándose como desactivado si supera los 14 días; enfermedad o incapacidad médica, con la misma lógica (cupones si es menos de 5 días, documento médico hasta 14 días, desactivado si supera los 14 días); errores internos de la empresa que le impidan operar, que Supply debe verificar antes de enviarlos a Finanzas; y falta de unidad por cambio de vehículo entre semana, exonerable hasta un máximo de 6 días, debiendo pedir cupones la semana siguiente.",
+    body: dataTable(["Motivo","Condición y evidencia"], [
+      ["Fallecimiento de familiar cercano","1er grado (padres, hijos, cónyuge/pareja): máx. 7 días, con certificado de defunción. 2do grado (hermanos, abuelos, nietos): máx. 5 días. Si se excede: cupones o desactivar."],
+      ["Choque, accidente o desperfecto mecánico complejo","&lt;5 días: usar cupones. ≤14 días: daños que impidan trabajar — adjuntar proforma del taller o factura/boleta + documento de internamiento. &gt;14 días: enviar como DESACTIVADO."],
+      ["Enfermedad o incapacidad médica","&lt;5 días: usar cupones. ≤14 días: adjuntar documento médico. &gt;14 días: enviar como DESACTIVADO."],
+      ["Errores internos de la empresa","Situaciones administrativas o técnicas que impidan operar por causas ajenas al conductor, verificadas por Supply antes de enviarse a Finanzas: acceso LAP no habilitado en vías restringidas, actualización de documentos en la web de Directo, reconexión con inicio entre semana, entre otras."],
+      ["Sin unidad (cambio de unidad entre semana)","Se exoneran como máximo 6 días. La semana siguiente debe pedir cupones."]
+    ], true)
+  });
+
+  // Section 11 — Códigos de pareo
+  CARDS.push({section:11, tags:"codigos de pareo app routing conductor soporte celular reset",
+    title:"Códigos de pareo — App Routing Conductor",
+    badges:[{t:"Llamada",c:""}],
+    msg:"Si cambió de celular o reseteó su teléfono, necesita códigos de pareo nuevos para la app Routing Conductor. Debe llamar a Soporte Routing al 956 352 681, de lunes a sábado de 9:00am a 5:00pm (no atienden domingos ni feriados). Si llama dentro de ese horario y no le responden, espere al menos 4 horas y recién después escale con Alonso Arias al 968 647 502.",
+    body:
+      '<p>Se necesitan códigos nuevos cuando el conductor cambia de celular o resetea su teléfono.</p>' +
+      kv([
+        ["Primer contacto","Soporte Routing: <strong>956 352 681</strong>. Horario: lunes a sábado, 9:00am–5:00pm. Domingos y feriados no atienden."],
+        ["Si no responden","Esperar al menos 4 horas dentro del horario de atención. Recién después, escalar a Alonso Arias: <strong>968 647 502</strong>."]
+      ])
+  });
+
+  // Section 12 — Referidos y GratiCash
+  CARDS.push({section:12, tags:"programa de referidos aerolineas aeropuerto bono descuento membresia",
+    title:"Programa de referidos — Aerolíneas y Aeropuerto",
+    msg:"El programa de referidos aplica solo para las flotas Aeropuerto y Aerolíneas (no para Urbana ni Plazas). En Aerolíneas: usted gana S/120 por semana durante 2 semanas (total S/240) si su referido hace 25 servicios por semana durante esas dos semanas en cualquiera de las 3 aerolíneas, y su referido gana un bono de S/120 al cumplir esos 25 servicios semanales. En Aeropuerto: usted gana 2 semanas con 50% de descuento en su membresía, y su referido gana 1 semana con 50% de descuento en la suya.",
+    body:
+      '<p>Aplica solo para Flota Aeropuerto y Aerolíneas. No aplica para Urbana ni Plazas.</p>' +
+      sub("✈️ Aerolíneas") +
+      notes([
+        "El referidor gana S/120 por semana durante 2 semanas (total S/240), si el referido realiza 25 servicios por semana (durante dos semanas) en cualquiera de las 3 aerolíneas.",
+        "El referido gana S/120 (bono) por realizar 25 servicios por semana en cualquiera de las 3 aerolíneas."
+      ]) +
+      sub("🛫 Aeropuerto") +
+      notes([
+        "El referidor gana 2 semanas con 50% de descuento en su membresía.",
+        "El referido gana 1 semana con 50% de descuento en su membresía."
+      ])
+  });
+  CARDS.push({section:12, tags:"graticash desafio zarpes saldo beneficios dni",
+    title:"GratiCash",
+    badges:[{t:"En evaluación",c:"warn"}],
+    msg:"GratiCash es un programa de incentivo acumulable por conexión. El Desafío 1 corre de lunes a viernes, en zarpes de 4:00pm a 11:59pm: con 5 viajes gana S/30 y con 10 viajes gana S/60. El Desafío 2 corre los domingos, en zarpes o recojos de 4:00pm a 11:59pm: desde 2 viajes gana S/30. Puede consultar su saldo en la app Beneficios, sección GratiCash, ingresando con su número de móvil y su DNI como contraseña. Este beneficio finalizó el 15/07 y está en evaluación su habilitación de agosto a diciembre, así que confírmele al conductor que puede estar sujeto a cambios.",
+    body:
+      '<p>Programa de incentivo acumulable por conexión. Finalizó el 15/07 — en evaluación la habilitación del beneficio de agosto a diciembre.</p>' +
+      dataTable(["Desafío","Cuándo","Meta","Premio"], [
+        ["Desafío 1","Lunes a viernes · zarpes, 4:00pm–11:59pm","5 viajes","S/30"],
+        ["","","10 viajes","S/60"],
+        ["Desafío 2","Domingos · zarpes o recojos, 4:00pm–11:59pm","Desde 2 viajes","S/30"]
+      ]) +
+      notes(["Consulta de saldo: app Beneficios &gt; GratiCash, ingresando con número de móvil y DNI como contraseña."])
+  });
+
+  // Section 13 — Cronograma
+  CARDS.push({section:13, tags:"cronograma cobro servicio contable semanas 2026 mayo junio julio agosto",
+    title:"Cronograma de cobro del servicio contable 2026",
+    msg:"El servicio contable se descuenta según la semana del año en la que cae, no por mes calendario. En 2026: la semana 18 se cobró el servicio contable de mayo, la semana 22 el de junio, la semana 27 se cobrará el de julio, la semana 32 el de agosto, la semana 36 el de setiembre, la semana 41 el de octubre, la semana 45 el de noviembre y la semana 49 el de diciembre.",
+    body: dataTable(["Semana 2026","Detalle"], [
+      ["Semana 18","Se cobró el servicio contable de mayo."],
+      ["Semana 22","Se cobró servicio contable de junio."],
+      ["Semana 27","Se cobrará servicio contable de julio."],
+      ["Semana 32","Se cobrará servicio contable de agosto."],
+      ["Semana 36","Se cobrará servicio contable de setiembre."],
+      ["Semana 41","Se cobrará servicio contable de octubre."],
+      ["Semana 45","Se cobrará servicio contable de noviembre."],
+      ["Semana 49","Se cobrará servicio contable de diciembre."]
+    ])
+  });
+
+  // ---------- render chips ----------
+  var chipsEl = document.getElementById("chips");
+  var allChip = document.createElement("button");
+  allChip.className = "chip"; allChip.type = "button"; allChip.textContent = "Todas";
+  allChip.setAttribute("aria-pressed", "true");
+  allChip.dataset.section = "";
+  chipsEl.appendChild(allChip);
+  SECTIONS.forEach(function(s){
+    var b = document.createElement("button");
+    b.className = "chip"; b.type = "button";
+    b.textContent = "S" + s.id + " · " + s.name;
+    b.setAttribute("aria-pressed", "false");
+    b.dataset.section = String(s.id);
+    chipsEl.appendChild(b);
+  });
+
+  var activeSection = "";
+  chipsEl.addEventListener("click", function(e){
+    var btn = e.target.closest(".chip");
+    if(!btn) return;
+    activeSection = btn.dataset.section;
+    chipsEl.querySelectorAll(".chip").forEach(function(c){
+      c.setAttribute("aria-pressed", c === btn ? "true" : "false");
+    });
+    render();
+  });
+
+  // ---------- search index ----------
+  function normalize(s){
+    return (s || "").toString().normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+  }
+  var scratch = document.createElement("div");
+  CARDS.forEach(function(c){
+    scratch.innerHTML = c.body;
+    var plain = scratch.textContent || "";
+    c._index = normalize(c.title + " " + (c.tags||"") + " " + plain);
+  });
+
+  // ---------- render results ----------
+  var resultsEl = document.getElementById("results");
+  var emptyEl = document.getElementById("empty");
+  var countEl = document.getElementById("count");
+  var clearBtn = document.getElementById("clear");
+  var qInput = document.getElementById("q");
+  var updatesEl = document.getElementById("updates");
+  var contactsEl = document.getElementById("contactos");
+  var backToRefEl = document.getElementById("backToRef");
+
+  // ---------- copy-to-clipboard summaries ----------
+  function cleanText(s){ return (s || "").replace(/\s+/g, " ").trim(); }
+
+  function nodeToLines(node){
+    var lines = [];
+    Array.prototype.forEach.call(node.childNodes, function(el){
+      if(el.nodeType === 3){
+        var t = cleanText(el.textContent);
+        if(t) lines.push(t);
+        return;
+      }
+      if(el.nodeType !== 1) return;
+      var tag = el.tagName.toLowerCase();
+
+      if(tag === "table"){
+        var isKv = el.classList.contains("kv");
+        var cellText = function(cell){
+          var lis = cell.querySelectorAll("li");
+          if(lis.length){
+            return Array.prototype.map.call(lis, function(li){ return cleanText(li.textContent); }).join(", ");
+          }
+          return cleanText(cell.textContent);
+        };
+        Array.prototype.forEach.call(el.querySelectorAll("tr"), function(tr){
+          var cells = Array.prototype.map.call(tr.querySelectorAll("th,td"), cellText);
+          if(!cells.length) return;
+          if(isKv && cells.length >= 2){
+            lines.push(cells[0] + ": " + cells.slice(1).join(" "));
+          } else {
+            lines.push(cells.join(" | "));
+          }
+        });
+        return;
+      }
+      if(tag === "ul" || tag === "ol"){
+        Array.prototype.forEach.call(el.children, function(li){
+          if(li.tagName.toLowerCase() !== "li") return;
+          lines.push("• " + cleanText(li.textContent));
+        });
+        return;
+      }
+      if(tag === "div" && el.classList.contains("subhead")){
+        lines.push(cleanText(el.textContent).toUpperCase());
+        return;
+      }
+      if(tag === "p"){
+        var t2 = cleanText(el.textContent);
+        if(t2) lines.push(t2);
+        return;
+      }
+      // generic container (div.table-wrap, span, etc.): recurse into children
+      lines = lines.concat(nodeToLines(el));
+    });
+    return lines;
+  }
+
+  function cardKind(card){
+    var badges = card.badges || [];
+    if(badges.some(function(b){ return /Requiere ticket/i.test(b.t); })) return "ticket";
+    if(badges.some(function(b){ return /No se ticketea/i.test(b.t); })) return "noticket";
+    return "info";
+  }
+
+  var copyScratch = document.createElement("div");
+  function buildCopyText(card){
+    if(card.rawText) return card.rawText;
+    var boldTitle = "*" + card.title + "*";
+    var text;
+    if(card.msgSections && card.msgSections.length){
+      var secParts = [boldTitle, ""];
+      card.msgSections.forEach(function(sec, i){
+        if(i > 0) secParts.push("");
+        secParts.push(sec[0].toUpperCase(), sec[1]);
+      });
+      text = secParts.join("\n");
+    } else if(card.reqsList && card.reqsList.length){
+      var parts = [boldTitle, ""];
+      if(card.rigeMsg){
+        parts.push("Rige desde: " + card.rigeMsg, "");
+      }
+      parts.push("*Requisitos*");
+      parts = parts.concat(card.reqsList.map(function(r){ return r + ":"; }));
+      if(card.copyNotas && card.copyNotas.length){
+        parts = parts.concat(card.copyNotas.map(function(n){ return "- " + n; }));
+      }
+      if(card.confirmMsg){
+        parts.push("", card.confirmMsg);
+      }
+      text = parts.join("\n");
+    } else if(card.msg){
+      text = boldTitle + "\n\n" + card.msg;
+      if(card.copyNotas && card.copyNotas.length){
+        text += "\n\n" + card.copyNotas.map(function(n){ return "- " + n; }).join("\n");
+      }
+    } else {
+      // Fallback for any card without an authored msg: mechanical dump of its body.
+      copyScratch.innerHTML = card.body;
+      var lines = nodeToLines(copyScratch).filter(Boolean);
+      text = boldTitle + "\n\n" + lines.join("\n");
+    }
+    // Nota: el cuadro "Esquema de pagos" (paySchemeTable) se queda solo en la ficha,
+    // para compartir como imagen/captura — no se incluye en el texto a copiar.
+    return text;
+  }
+
+  function fallbackCopy(text){
+    var ta = document.createElement("textarea");
+    ta.value = text;
+    ta.style.position = "fixed";
+    ta.style.opacity = "0";
+    document.body.appendChild(ta);
+    ta.select();
+    try{ document.execCommand("copy"); }catch(e){ /* silent */ }
+    document.body.removeChild(ta);
+  }
+
+  function copyCardText(card, btn){
+    var text = buildCopyText(card);
+    var done = function(){
+      var original = btn.textContent;
+      btn.textContent = "✓ Copiado";
+      btn.classList.add("copied");
+      setTimeout(function(){ btn.textContent = original; btn.classList.remove("copied"); }, 1700);
+    };
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(done, function(){ fallbackCopy(text); done(); });
+    } else {
+      fallbackCopy(text);
+      done();
+    }
+  }
+
+  var ACCENT_CLASS = {a:"[aáÁ]", e:"[eéÉ]", i:"[iíÍ]", o:"[oóÓ]", u:"[uúÚüÜ]", n:"[nñÑ]"};
+  function accentSafeChar(ch){
+    return ACCENT_CLASS[ch.toLowerCase()] || ch.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  }
+  function tokenToPattern(t){
+    return t.split("").map(accentSafeChar).join("");
+  }
+  function highlight(text, tokens){
+    if(!tokens.length) return text;
+    var re = new RegExp("(" + tokens.map(tokenToPattern).join("|") + ")", "gi");
+    return text.replace(re, "<mark>$1</mark>");
+  }
+
+  function render(){
+    var raw = qInput.value.trim();
+    var q = normalize(raw);
+    var tokens = q.split(/\s+/).filter(Boolean);
+    clearBtn.hidden = raw.length === 0;
+
+    // While the driver's exec is actively searching or browsing a section,
+    // get results in front of them right away — tuck the reference panels
+    // (contacts, schedule, updates) out of the way instead of making them scroll past it.
+    var isFiltering = tokens.length > 0 || !!activeSection;
+    if(updatesEl) updatesEl.hidden = isFiltering;
+    if(contactsEl) contactsEl.hidden = isFiltering;
+    if(backToRefEl) backToRefEl.hidden = !isFiltering;
+
+    var visible = CARDS.filter(function(c){
+      if(activeSection && String(c.section) !== activeSection) return false;
+      if(!tokens.length) return true;
+      return tokens.every(function(t){ return c._index.indexOf(t) !== -1; });
+    });
+
+    resultsEl.innerHTML = "";
+
+    if(!visible.length){
+      emptyEl.style.display = "block";
+      countEl.textContent = "0 resultados";
+      return;
+    }
+    emptyEl.style.display = "none";
+    countEl.textContent = tokens.length || activeSection ?
+      (visible.length + (visible.length === 1 ? " ficha encontrada" : " fichas encontradas")) :
+      (visible.length + " fichas en la guía");
+
+    SECTIONS.forEach(function(sec){
+      var group = visible.filter(function(c){ return c.section === sec.id; });
+      if(!group.length) return;
+
+      var h = document.createElement("h2");
+      h.className = "section-heading";
+      h.innerHTML = '<span class="n">S' + sec.id + '</span> · ' + sec.name;
+      resultsEl.appendChild(h);
+
+      group.forEach(function(c){
+        var card = document.createElement("article");
+        card.className = "card";
+
+        var badgesHtml = "";
+        if(c.badges && c.badges.length){
+          badgesHtml = '<div class="badges">' + c.badges.map(function(b){
+            return '<span class="badge' + (b.c ? " " + b.c : "") + '">' + b.t + '</span>';
+          }).join("") + '</div>';
+        }
+
+        var titleHtml = raw.length ? highlight(c.title, tokens) : c.title;
+        var kind = cardKind(c);
+        var copyLabel = kind === "ticket" ? "📋 Copiar resumen para el ticket" :
+          kind === "noticket" ? "📋 Copiar mensaje para el conductor" :
+          "📋 Copiar resumen";
+
+        card.innerHTML = '<h3>' + titleHtml + '</h3>' + badgesHtml +
+          '<div class="card-actions"><button class="copy-btn" type="button">' + copyLabel + '</button></div>' +
+          c.body;
+        resultsEl.appendChild(card);
+
+        card.querySelector(".copy-btn").addEventListener("click", function(e){
+          copyCardText(c, e.currentTarget);
+        });
+        if(card.querySelector(".cred-box")) wireCredBoxes(card);
+        card.querySelectorAll("[data-copy-fleet]").forEach(function(btn){
+          btn.addEventListener("click", function(){
+            var key = btn.getAttribute("data-copy-fleet");
+            var f = FLEETS.filter(function(x){ return x.key === key; })[0];
+            if(f) copyCardText(fleetCopyCard(f), btn);
+          });
+        });
+      });
+    });
+  }
+
+  qInput.addEventListener("input", render);
+  clearBtn.addEventListener("click", function(){
+    qInput.value = "";
+    qInput.focus();
+    render();
+  });
+  if(backToRefEl){
+    backToRefEl.addEventListener("click", function(){
+      qInput.value = "";
+      activeSection = "";
+      chipsEl.querySelectorAll(".chip").forEach(function(c){
+        c.setAttribute("aria-pressed", c === allChip ? "true" : "false");
+      });
+      render();
+      if(contactsEl) contactsEl.scrollIntoView({behavior:"smooth", block:"start"});
+    });
+  }
+  document.querySelectorAll("#empty .try button").forEach(function(b){
+    b.addEventListener("click", function(){
+      qInput.value = b.dataset.try;
+      activeSection = "";
+      chipsEl.querySelectorAll(".chip").forEach(function(c){
+        c.setAttribute("aria-pressed", c === allChip ? "true" : "false");
+      });
+      render();
+      qInput.focus();
+    });
+  });
+
+  render();
+
+  // ---------- credential cards (show/hide + copy) ----------
+  function wireCredBoxes(root){
+    root.querySelectorAll(".cred-box").forEach(function(box){
+      if(box.dataset.credWired === "true") return;
+      box.dataset.credWired = "true";
+      box.querySelectorAll("[data-toggle-cred]").forEach(function(btn){
+        btn.addEventListener("click", function(){
+          var wrap = btn.closest(".cred-value-wrap");
+          var valEl = wrap.querySelector(".cred-value[data-cred-text]");
+          var masked = valEl.dataset.masked !== "false";
+          if(masked){
+            valEl.textContent = valEl.dataset.credText;
+            valEl.dataset.masked = "false";
+            btn.textContent = "Ocultar";
+          } else {
+            valEl.textContent = "•".repeat(Math.max(8, valEl.dataset.credText.length));
+            valEl.dataset.masked = "true";
+            btn.textContent = "Mostrar";
+          }
+        });
+      });
+      box.querySelectorAll("[data-copy-cred]").forEach(function(btn){
+        btn.addEventListener("click", function(){
+          var wrap = btn.closest(".cred-value-wrap");
+          var valEl = wrap.querySelector(".cred-value[data-cred-text]");
+          var text = valEl.dataset.credText;
+          var done = function(){
+            var orig = btn.textContent;
+            btn.textContent = "✓";
+            setTimeout(function(){ btn.textContent = orig; }, 1400);
+          };
+          if(navigator.clipboard && navigator.clipboard.writeText){
+            navigator.clipboard.writeText(text).then(done, function(){ fallbackCopy(text); done(); });
+          } else {
+            fallbackCopy(text);
+            done();
+          }
+        });
+      });
+    });
+  }
+  wireCredBoxes(document);
+
+  // ---------- Horarios de atención y responsables ----------
+  var SCHEDULE = [
+    {servicio:"Inspecciones", ubicacion:"Oficina Miraflores", dias:"Lunes a viernes", horario:"9:00am–6:00pm", resp:"Jhon Diaz", nota:"Llamar 924 027 030"},
+    {servicio:"Atención de ejecutivos", ubicacion:"Oficina Miraflores", dias:"Martes a viernes", horario:"9:30am–5:00pm", resp:"—", nota:"Consultas generales o solicitudes de atención presencial."},
+    {servicio:"Reconexiones", ubicacion:"Oficina Miraflores", dias:"Martes y jueves", horario:"9:30am–4:30pm", resp:"Ricardo Tapia (titular) · Mirlandy Gamez (en su defecto)", nota:"Coordinar previamente con Afiliación: 923 129 603."},
+    {servicio:"Atención en aeropuerto", ubicacion:"Aeropuerto", dias:"Miércoles y viernes", horario:"9:30am–5:00pm", resp:"Melissa del Pino (titular) · Ailyn Carrillo (ingresar a STAYING)", nota:"Solo consultas y atención presencial."},
+    {servicio:"Inspecciones", ubicacion:"Aeropuerto", dias:"Horario rotativo", horario:"Según coordinación", resp:"Jigsaw Ramos", nota:"Programar cita al 902 015 419."}
+  ];
+
+  function scheduleCopyMsg(row){
+    var lines = ["Atención: " + row.dias + ", " + row.horario + "."];
+    if(row.resp && row.resp !== "—"){
+      lines.push("Responsable(s): " + row.resp + ".");
+    }
+    if(row.nota){
+      lines.push(row.nota.replace(/\.?$/, "."));
+    }
+    return lines.join("\n");
+  }
+
+  var scheduleBody = document.getElementById("scheduleBody");
+  if(scheduleBody){
+    SCHEDULE.forEach(function(row){
+      var tr = document.createElement("tr");
+      tr.innerHTML =
+        '<td>'+row.servicio+'</td>' +
+        '<td>'+row.ubicacion+'</td>' +
+        '<td>'+row.dias+'</td>' +
+        '<td>'+row.horario+'</td>' +
+        '<td>'+row.resp+'</td>' +
+        '<td>'+row.nota+'</td>' +
+        '<td><button class="copy-btn small" type="button">📋 Copiar</button></td>';
+      scheduleBody.appendChild(tr);
+      var rowCard = {title: row.servicio + " — " + row.ubicacion, msg: scheduleCopyMsg(row)};
+      tr.querySelector(".copy-btn").addEventListener("click", function(e){
+        copyCardText(rowCard, e.currentTarget);
+      });
+    });
+  }
+})();
+</script>
+
+
+</body>
+</html>
